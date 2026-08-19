@@ -1,0 +1,29 @@
+name: pebble
+description: "Personal expense tracker — manual, local, private."
+publish_to: 'none'
+version: 0.2.0
+
+environment:
+  sdk: ^3.10.1
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_bloc: ^9.0.0
+  equatable: ^2.0.0
+  hive: ^2.2.3
+  hive_flutter: ^1.1.0
+  fl_chart: ^0.70.0
+  shared_preferences: ^2.0.0
+  share_plus: ^10.0.0
+  path_provider: ^2.0.0
+  intl: any
+  uuid: ^4.6.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true

@@ -6,6 +6,7 @@ import '../blocs/expense/expense_state.dart';
 import '../models/category.dart';
 import '../models/expense.dart';
 import '../theme/app_colors.dart';
+import '../theme/app_spacing.dart';
 import '../theme/app_text_styles.dart';
 import 'category_grid.dart';
 import 'date_chip_selector.dart';
@@ -103,6 +104,8 @@ class _ExpenseEntrySheetState extends State<ExpenseEntrySheet> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
+    final styles = AppTextStyles.of(context);
     final categories = context.select((ExpenseCubit cubit) {
       final state = cubit.state;
       if (state is ExpenseLoaded) return state.categories;
@@ -122,8 +125,8 @@ class _ExpenseEntrySheetState extends State<ExpenseEntrySheet> {
         },
         child: Padding(
           padding: EdgeInsets.only(
-            left: 20,
-            right: 20,
+            left: 16,
+            right: 16,
             top: 20,
             bottom: MediaQuery.of(context).viewInsets.bottom + 16,
           ),
@@ -144,11 +147,17 @@ class _ExpenseEntrySheetState extends State<ExpenseEntrySheet> {
                         keyboardType: const TextInputType.numberWithOptions(
                           decimal: true,
                         ),
-                        style: AppTextStyles.totalAmount,
+                        style: styles.totalAmount,
                         textAlign: TextAlign.center,
-                        decoration: const InputDecoration(
+                        decoration: InputDecoration(
                           hintText: '0',
-                          prefixText: '₹',
+                          prefix: Padding(
+                            padding: const EdgeInsets.only(right: 4),
+                            child: Text(
+                              '₹',
+                              style: styles.totalAmount,
+                            ),
+                          ),
                           border: InputBorder.none,
                         ),
                       ),
@@ -174,12 +183,12 @@ class _ExpenseEntrySheetState extends State<ExpenseEntrySheet> {
                       // Note field
                       TextField(
                         controller: _noteController,
-                        style: AppTextStyles.expenseLabel,
+                        style: styles.listRowTitle,
                         decoration: InputDecoration(
                           hintText: 'Add a note (optional)',
-                          hintStyle: AppTextStyles.expenseNote,
+                          hintStyle: styles.body,
                           filled: true,
-                          fillColor: AppColors.surface,
+                          fillColor: colors.surfaceRaised,
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
                             borderSide: BorderSide.none,
@@ -204,19 +213,21 @@ class _ExpenseEntrySheetState extends State<ExpenseEntrySheet> {
                   onPressed: _canSubmit ? _submit : null,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: _canSubmit
-                        ? AppColors.accent
-                        : AppColors.accentDisabled,
-                    foregroundColor: Colors.white,
-                    disabledBackgroundColor: AppColors.accentDisabled,
-                    disabledForegroundColor: Colors.white70,
+                        ? colors.textPrimary
+                        : colors.textTertiary,
+                    foregroundColor: colors.surfaceRaised,
+                    disabledBackgroundColor: colors.textTertiary,
+                    disabledForegroundColor: colors.surfaceRaised
+                        .withValues(alpha: 0.7),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
+                      borderRadius:
+                          BorderRadius.circular(AppSpacing.radiusChip),
                     ),
                     elevation: 0,
                   ),
                   child: Text(
                     widget.isEditing ? 'Save changes' : 'Log expense',
-                    style: AppTextStyles.button,
+                    style: styles.button,
                   ),
                 ),
               ),

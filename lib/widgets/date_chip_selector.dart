@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../theme/app_colors.dart';
+import '../theme/app_spacing.dart';
 import '../theme/app_text_styles.dart';
 
 /// Date chip row — Today / Yesterday / 2d / 3d / Custom (§7).
@@ -17,6 +18,8 @@ class DateChipSelector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
+    final styles = AppTextStyles.of(context);
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
 
@@ -41,6 +44,8 @@ class DateChipSelector extends StatelessWidget {
               padding: const EdgeInsets.only(right: 8),
               child: _buildChip(
                 context: context,
+                colors: colors,
+                styles: styles,
                 label: chip.label,
                 selected: chip.date == selectedDay,
                 onTap: () => onDateSelected(chip.date),
@@ -49,6 +54,8 @@ class DateChipSelector extends StatelessWidget {
           ),
           _buildChip(
             context: context,
+            colors: colors,
+            styles: styles,
             label: isCustom
                 ? '${selectedDate.day}/${selectedDate.month}'
                 : 'Custom',
@@ -70,6 +77,8 @@ class DateChipSelector extends StatelessWidget {
 
   Widget _buildChip({
     required BuildContext context,
+    required AppColors colors,
+    required AppTextStyles styles,
     required String label,
     required bool selected,
     required VoidCallback onTap,
@@ -80,17 +89,17 @@ class DateChipSelector extends StatelessWidget {
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
-          color: selected ? AppColors.accent : AppColors.surface,
-          borderRadius: BorderRadius.circular(20),
+          color: selected ? colors.textPrimary : colors.surfaceRaised,
+          borderRadius: BorderRadius.circular(AppSpacing.radiusChip),
           border: Border.all(
-            color: selected ? AppColors.accent : AppColors.border,
+            color: selected ? colors.textPrimary : colors.borderHairline,
             width: 0.5,
           ),
         ),
         child: Text(
           label,
-          style: AppTextStyles.chipLabel.copyWith(
-            color: selected ? Colors.white : AppColors.textPrimary,
+          style: styles.chipLabel.copyWith(
+            color: selected ? colors.surfaceRaised : colors.textPrimary,
           ),
         ),
       ),

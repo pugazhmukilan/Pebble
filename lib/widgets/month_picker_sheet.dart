@@ -47,8 +47,11 @@ class _MonthPickerSheetState extends State<MonthPickerSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
+    final styles = AppTextStyles.of(context);
+
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 0, 20, 32),
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 32),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -59,13 +62,13 @@ class _MonthPickerSheetState extends State<MonthPickerSheet> {
               IconButton(
                 onPressed: () => setState(() => _year--),
                 icon: const Icon(Icons.chevron_left_rounded),
-                color: AppColors.textMuted,
+                color: colors.textSecondary,
               ),
-              Text('$_year', style: AppTextStyles.monthHeader),
+              Text('$_year', style: styles.screenTitle),
               IconButton(
                 onPressed: () => setState(() => _year++),
                 icon: const Icon(Icons.chevron_right_rounded),
-                color: AppColors.textMuted,
+                color: colors.textSecondary,
               ),
             ],
           ),
@@ -97,21 +100,21 @@ class _MonthPickerSheetState extends State<MonthPickerSheet> {
                   duration: const Duration(milliseconds: 200),
                   alignment: Alignment.center,
                   decoration: BoxDecoration(
-                    color: isSelected ? AppColors.accent : AppColors.surface,
+                    color: isSelected ? colors.textPrimary : colors.surfaceRaised,
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                      color: isSelected ? AppColors.accent : AppColors.border,
+                      color: isSelected ? colors.textPrimary : colors.borderHairline,
                       width: 0.5,
                     ),
                   ),
                   child: Text(
                     _months[index],
-                    style: AppTextStyles.chipLabel.copyWith(
+                    style: styles.chipLabel.copyWith(
                       color: isFuture
-                          ? AppColors.accentDisabled
+                          ? colors.textTertiary
                           : isSelected
-                          ? Colors.white
-                          : AppColors.textPrimary,
+                          ? colors.surfaceRaised
+                          : colors.textPrimary,
                     ),
                   ),
                 ),

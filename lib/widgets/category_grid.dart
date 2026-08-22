@@ -2,14 +2,19 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../blocs/expense/expense_cubit.dart';
+import '../constants/category_colors.dart';
 import '../models/category.dart';
 import '../theme/app_colors.dart';
+import '../theme/app_spacing.dart';
 import '../theme/app_text_styles.dart';
 import 'category_editor_sheet.dart';
 import 'category_icon.dart';
 
 /// Grid of category icons + an Add New button.
 /// Tap → select. Long-press → edit / delete options.
+///
+/// Category color is NEVER used here (§5.3): every tile renders on the
+/// same neutral chip, selection is communicated with text weights only.
 class CategoryGrid extends StatelessWidget {
   const CategoryGrid({
     super.key,
@@ -26,12 +31,15 @@ class CategoryGrid extends StatelessWidget {
     BuildContext context,
     ExpenseCategory? category,
   ) async {
+    final colors = AppColors.of(context);
     final result = await showModalBottomSheet<ExpenseCategory>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: AppColors.background,
+      backgroundColor: colors.surfaceRaised,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(AppSpacing.radiusCard),
+        ),
       ),
       builder: (_) => CategoryEditorSheet(
         category: category,
@@ -52,40 +60,43 @@ class CategoryGrid extends StatelessWidget {
   }
 
   void _showCategoryOptions(BuildContext context, ExpenseCategory category) {
+    // The system-reserved "Other" is not user-editable or deletable (§1.3).
+    if (category.id == kOtherCategoryId) return;
+
+    final colors = AppColors.of(context);
+    final styles = AppTextStyles.of(context);
     showModalBottomSheet(
       context: context,
-      backgroundColor: AppColors.background,
+      backgroundColor: colors.surfaceRaised,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(AppSpacing.radiusCard),
+        ),
       ),
       builder: (sheetCtx) => SafeArea(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const SizedBox(height: 12),
             ListTile(
-              leading: const Icon(
+              leading: Icon(
                 Icons.edit_rounded,
-                color: AppColors.textPrimary,
+                color: colors.textPrimary,
               ),
-              title: const Text(
-                'Edit category',
-                style: AppTextStyles.expenseLabel,
-              ),
+              title: Text('Edit category', style: styles.listRowTitle),
               onTap: () {
                 Navigator.pop(sheetCtx);
                 _openEditor(context, category);
               },
             ),
             ListTile(
-              leading: const Icon(
+              leading: Icon(
                 Icons.delete_rounded,
-                color: AppColors.destructive,
+                color: colors.signalExpense,
               ),
               title: Text(
                 'Delete category',
-                style: AppTextStyles.expenseLabel.copyWith(
-                  color: AppColors.destructive,
+                style: styles.listRowTitle.copyWith(
+                  color: colors.signalExpense,
                 ),
               ),
               onTap: () async {
@@ -105,7 +116,7 @@ class CategoryGrid extends StatelessWidget {
                       TextButton(
                         onPressed: () => Navigator.pop(ctx, true),
                         style: TextButton.styleFrom(
-                          foregroundColor: AppColors.destructive,
+                          foregroundColor: colors.signalExpense,
                         ),
                         child: const Text('Delete'),
                       ),
@@ -117,7 +128,6 @@ class CategoryGrid extends StatelessWidget {
                 }
               },
             ),
-            const SizedBox(height: 8),
           ],
         ),
       ),
@@ -126,29 +136,31 @@ class CategoryGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
+    final styles = AppTextStyles.of(context);
+
     return GridView.count(
       crossAxisCount: 4,
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      mainAxisSpacing: 12,
-      crossAxisSpacing: 12,
+      mainAxisSpacing: AppSpacing.sm,
+      crossAxisSpacing: AppSpacing.sm,
       childAspectRatio: 1,
       children: [
         ...categories.map((category) {
           final isSelected = category.id == selectedCategoryId;
-          final color = Color(category.colorValue);
           return GestureDetector(
             onTap: () => onCategorySelected(category.id),
             onLongPress: () => _showCategoryOptions(context, category),
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 200),
               decoration: BoxDecoration(
-                color: isSelected
-                    ? color.withValues(alpha: 0.15)
-                    : AppColors.surface,
-                borderRadius: BorderRadius.circular(16),
+                color: isSelected ? colors.surfaceRaised : colors.surfaceRaised,
+                borderRadius: BorderRadius.circular(AppSpacing.radiusChip),
                 border: Border.all(
-                  color: isSelected ? color : AppColors.border,
+                  color: isSelected
+                      ? colors.textPrimary
+                      : colors.borderHairline,
                   width: isSelected ? 1.5 : 0.5,
                 ),
               ),
@@ -158,19 +170,22 @@ class CategoryGrid extends StatelessWidget {
                   CategoryIcon(
                     category: category,
                     size: 24,
-                    color: isSelected ? color : AppColors.textMuted,
+                    color:
+                        isSelected ? colors.textPrimary : colors.textSecondary,
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: AppSpacing.xs),
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.xs,
+                    ),
                     child: Text(
                       category.label,
-                      style: AppTextStyles.caption.copyWith(
-                        color: isSelected ? color : AppColors.textMuted,
-                        fontWeight: isSelected
-                            ? FontWeight.w600
-                            : FontWeight.w400,
-                      ),
+                      style: isSelected
+                          ? styles.chipLabel.copyWith(
+                              color: colors.textPrimary,
+                              fontWeight: FontWeight.w500,
+                            )
+                          : styles.chipLabel,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -185,16 +200,16 @@ class CategoryGrid extends StatelessWidget {
           onTap: () => _openEditor(context, null),
           child: Container(
             decoration: BoxDecoration(
-              color: AppColors.surface,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: AppColors.border, width: 0.5),
+              color: colors.surfaceRaised,
+              borderRadius: BorderRadius.circular(AppSpacing.radiusChip),
+              border: Border.all(color: colors.borderHairline, width: 0.5),
             ),
-            child: const Column(
+            child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.add_rounded, size: 24, color: AppColors.textMuted),
-                SizedBox(height: 4),
-                Text('Add New', style: AppTextStyles.caption),
+                Icon(Icons.add_rounded, size: 24, color: colors.textSecondary),
+                const SizedBox(height: AppSpacing.xs),
+                Text('Add New', style: styles.chipLabel),
               ],
             ),
           ),

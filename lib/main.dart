@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'blocs/expense/expense_cubit.dart';
 import 'blocs/onboarding/onboarding_cubit.dart';
+import 'blocs/theme/theme_cubit.dart';
 import 'constants/categories.dart';
 import 'data/expense_repository.dart';
 import 'models/category.dart';
@@ -42,6 +43,9 @@ void main() async {
     categoryBox = await Hive.openBox<ExpenseCategory>('categories');
   }
 
+  // Open settings box for theme persistence
+  final settingsBox = await ThemeCubit.openSettingsBox();
+
   // Wire concrete implementation (DI, §14)
   final repository = HiveExpenseRepository(expenseBox, categoryBox);
 
@@ -52,17 +56,23 @@ void main() async {
   final prefs = await SharedPreferences.getInstance();
   final hasOnboarded = prefs.getBool('has_onboarded') ?? false;
 
-  runApp(PebbleApp(repository: repository, hasOnboarded: hasOnboarded));
+  runApp(PebbleApp(
+    repository: repository,
+    themeCubit: ThemeCubit(settingsBox),
+    hasOnboarded: hasOnboarded,
+  ));
 }
 
 class PebbleApp extends StatelessWidget {
   const PebbleApp({
     super.key,
     required this.repository,
+    required this.themeCubit,
     required this.hasOnboarded,
   });
 
   final HiveExpenseRepository repository;
+  final ThemeCubit themeCubit;
   final bool hasOnboarded;
 
   @override
@@ -73,14 +83,19 @@ class PebbleApp extends StatelessWidget {
       ],
       child: MultiBlocProvider(
         providers: [
+          BlocProvider<ThemeCubit>.value(value: themeCubit),
           BlocProvider(create: (_) => OnboardingCubit()..checkOnboarding()),
           BlocProvider(create: (_) => ExpenseCubit(repository)..loadExpenses()),
         ],
-        child: MaterialApp(
-          title: 'Pebble',
-          debugShowCheckedModeBanner: false,
-          theme: buildAppTheme(),
-          home: hasOnboarded ? const HomeScreen() : const OnboardingScreen(),
+        child: BlocBuilder<ThemeCubit, ThemeMode>(
+          builder: (context, themeMode) => MaterialApp(
+            title: 'Pebble',
+            debugShowCheckedModeBanner: false,
+            theme: buildLightTheme(),
+            darkTheme: buildDarkTheme(),
+            themeMode: themeMode,
+            home: hasOnboarded ? const HomeScreen() : const OnboardingScreen(),
+          ),
         ),
       ),
     );

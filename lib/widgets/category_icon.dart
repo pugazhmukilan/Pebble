@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../constants/category_icons.dart';
 import '../models/category.dart';
 
 /// Renders a category's icon — an emoji if set, otherwise the Material icon.
@@ -19,10 +20,16 @@ class CategoryIcon extends StatelessWidget {
   Widget build(BuildContext context) {
     final emoji = category.emoji;
     if (emoji != null && emoji.isNotEmpty) {
-      return Text(emoji, style: TextStyle(fontSize: size * 0.75));
+      return Center(
+        child: Text(
+          emoji,
+          textAlign: TextAlign.center,
+          style: TextStyle(fontSize: size * 0.75, height: 1.0),
+        ),
+      );
     }
     return Icon(
-      IconData(category.iconCodePoint, fontFamily: 'MaterialIcons'),
+      resolveCategoryIcon(category.iconCodePoint),
       size: size,
       color: color,
     );

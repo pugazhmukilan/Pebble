@@ -1,3 +1,9 @@
+import 'package:intl/intl.dart';
+
+/// Placeholder shown in place of amounts when the "obscure" privacy toggle
+/// is on, e.g. `₹••••••`.
+const String kObscuredAmount = '••••••';
+
 /// Compact rupee-amount formatting for space-constrained UI.
 ///
 /// Large amounts are shortened so long numbers don't squeeze out the
@@ -15,6 +21,19 @@ String formatCompactAmount(num amount) {
     return '${_trim(value / 1000)}k';
   }
   return _trim(value);
+}
+
+/// Full rupee-amount formatting with Indian digit grouping.
+///
+/// Shows the complete amount instead of compact suffixes, e.g. `12345` →
+/// `12,345`. Trailing zeros are dropped for whole amounts.
+String formatFullAmount(num amount) {
+  final nf = NumberFormat('##,##,##0.00', 'en_IN');
+  var formatted = nf.format(amount.toDouble().abs());
+  if (formatted.endsWith('.00')) {
+    formatted = formatted.substring(0, formatted.length - 3);
+  }
+  return amount.toDouble() < 0 ? '-$formatted' : formatted;
 }
 
 String _trim(double value) {

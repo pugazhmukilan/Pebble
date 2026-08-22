@@ -26,37 +26,48 @@ class MonthHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
+    final styles = AppTextStyles.of(context);
     final date = DateTime(year, month);
     final label = DateFormat('MMMM yyyy').format(date).toUpperCase();
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           IconButton(
             onPressed: onPrevious,
             icon: const Icon(Icons.chevron_left_rounded),
-            iconSize: 28,
-            color: AppColors.textMuted,
+            iconSize: 22,
+            visualDensity: VisualDensity.compact,
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(),
+            color: colors.textSecondary,
           ),
-          const SizedBox(width: 8),
-          Text(label, style: AppTextStyles.monthHeader),
-          const SizedBox(width: 4),
+          const SizedBox(width: 6),
+          Text(
+            label,
+            style: styles.screenTitle,
+          ),
+          const SizedBox(width: 2),
           GestureDetector(
             onTap: onCalendarTap,
-            child: const Icon(
+            child: Icon(
               Icons.calendar_month_rounded,
-              size: 20,
-              color: AppColors.textMuted,
+              size: 18,
+              color: colors.textSecondary,
             ),
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: 6),
           IconButton(
             onPressed: hasNext ? onNext : null,
             icon: const Icon(Icons.chevron_right_rounded),
-            iconSize: 28,
-            color: hasNext ? AppColors.textMuted : AppColors.border,
+            iconSize: 22,
+            visualDensity: VisualDensity.compact,
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(),
+            color: hasNext ? colors.textSecondary : colors.borderHairline,
           ),
         ],
       ),

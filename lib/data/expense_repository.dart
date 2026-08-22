@@ -2,12 +2,15 @@ import 'package:hive/hive.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/category.dart';
+import '../models/date_range.dart';
 import '../models/expense.dart';
 
 /// Abstract repository interface — Cubit depends on this, not the concrete
 /// Hive implementation (Dependency Inversion, §14).
 abstract class ExpenseRepository {
   Future<List<Expense>> getExpensesForMonth(int year, int month);
+  Future<double> getTotalForMonth(int year, int month);
+  Future<List<Expense>> getExpenses(DateRange range);
   Future<void> addExpense(Expense expense);
   Future<void> updateExpense(Expense expense);
   Future<void> deleteExpense(Expense expense);
@@ -35,6 +38,23 @@ class HiveExpenseRepository implements ExpenseRepository {
         .where((e) => e.date.year == year && e.date.month == month)
         .toList()
       ..sort((a, b) => b.date.compareTo(a.date));
+  }
+
+  @override
+  Future<double> getTotalForMonth(int year, int month) async {
+    var total = 0.0;
+    for (final expense in _expenseBox.values.where(
+      (e) => e.date.year == year && e.date.month == month,
+    )) {
+      total += expense.amount;
+    }
+    return total;
+  }
+
+  @override
+  Future<List<Expense>> getExpenses(DateRange range) async {
+    return _expenseBox.values.where((e) => range.contains(e.date)).toList()
+      ..sort((a, b) => a.date.compareTo(b.date));
   }
 
   @override
@@ -114,6 +134,12 @@ class HiveExpenseRepository implements ExpenseRepository {
       for (final cat in defaults) {
         await _categoryBox.put(cat.id, cat);
       }
+      return;
+    }
+    // Income was a temporary experiment — purge it (and reassign any of its
+    // entries) for installs that may have picked it up.
+    if (_categoryBox.containsKey('income')) {
+      await deleteCategory('income');
     }
   }
 }

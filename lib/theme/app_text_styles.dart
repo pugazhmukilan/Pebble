@@ -2,112 +2,118 @@ import 'package:flutter/material.dart';
 
 import 'app_colors.dart';
 
-/// Text styles using system font stack (Roboto on Android, SF Pro on iOS).
-/// Tabular figures for numeric alignment per spec §11.
-abstract final class AppTextStyles {
-  // Large total display
-  static const TextStyle totalAmount = TextStyle(
-    fontSize: 36,
-    fontWeight: FontWeight.w700,
-    color: AppColors.textPrimary,
-    letterSpacing: -0.5,
-    fontFeatures: [FontFeature.tabularFigures()],
-  );
+class AppTextStyles {
+  AppTextStyles({required AppColors colors}) : _colors = colors;
 
-  // Month header
-  static const TextStyle monthHeader = TextStyle(
-    fontSize: 17,
-    fontWeight: FontWeight.w600,
-    color: AppColors.textPrimary,
-    letterSpacing: -0.2,
-  );
+  static AppTextStyles of(BuildContext context) =>
+      AppTextStyles(colors: AppColors.of(context));
 
-  // Section header (day groups in expense list)
-  static const TextStyle sectionHeader = TextStyle(
-    fontSize: 13,
-    fontWeight: FontWeight.w600,
-    color: AppColors.textMuted,
-    letterSpacing: 0.5,
-  );
+  final AppColors _colors;
 
-  // Expense row — category label
-  static const TextStyle expenseLabel = TextStyle(
-    fontSize: 16,
-    fontWeight: FontWeight.w500,
-    color: AppColors.textPrimary,
-  );
+  TextStyle get _base => TextStyle(
+        fontFamily: 'Inter',
+        color: _colors.textPrimary,
+        fontWeight: FontWeight.w400,
+      );
 
-  // Expense row — note text
-  static const TextStyle expenseNote = TextStyle(
-    fontSize: 13,
-    fontWeight: FontWeight.w400,
-    color: AppColors.textMuted,
-  );
+  TextStyle get totalAmount => _base.copyWith(
+        fontSize: 40,
+        fontWeight: FontWeight.w600,
+        fontFeatures: const [FontFeature.tabularFigures()],
+        color: _colors.textPrimary,
+      );
 
-  // Expense row — amount
-  static const TextStyle expenseAmount = TextStyle(
-    fontSize: 16,
-    fontWeight: FontWeight.w600,
-    color: AppColors.textPrimary,
-    fontFeatures: [FontFeature.tabularFigures()],
-  );
+  TextStyle get screenTitle => _base.copyWith(
+        fontSize: 20,
+        fontWeight: FontWeight.w600,
+        color: _colors.textPrimary,
+      );
 
-  // Amount keypad display
-  static const TextStyle keypadDisplay = TextStyle(
-    fontSize: 40,
-    fontWeight: FontWeight.w300,
-    color: AppColors.textPrimary,
-    fontFeatures: [FontFeature.tabularFigures()],
-  );
+  TextStyle get sectionLabel => _base.copyWith(
+        fontSize: 12,
+        fontWeight: FontWeight.w500,
+        letterSpacing: 0.5,
+        color: _colors.textSecondary,
+      );
 
-  // Pill chip label
-  static const TextStyle chipLabel = TextStyle(
-    fontSize: 14,
-    fontWeight: FontWeight.w500,
-    color: AppColors.textPrimary,
-  );
+  TextStyle get listRowTitle => _base.copyWith(
+        fontSize: 16,
+        fontWeight: FontWeight.w500,
+        color: _colors.textPrimary,
+      );
 
-  // Button text
-  static const TextStyle button = TextStyle(
-    fontSize: 16,
-    fontWeight: FontWeight.w600,
-    color: Colors.white,
-  );
+  TextStyle get listRowSecondary => _base.copyWith(
+        fontSize: 14,
+        fontWeight: FontWeight.w400,
+        fontFeatures: const [FontFeature.tabularFigures()],
+        color: _colors.textSecondary,
+      );
 
-  // Small caption
-  static const TextStyle caption = TextStyle(
-    fontSize: 12,
-    fontWeight: FontWeight.w400,
-    color: AppColors.textMuted,
-  );
+  TextStyle get body => _base.copyWith(
+        fontSize: 14,
+        fontWeight: FontWeight.w400,
+        color: _colors.textSecondary,
+      );
 
-  // Onboarding — title
-  static const TextStyle onboardingTitle = TextStyle(
-    fontSize: 32,
-    fontWeight: FontWeight.w700,
-    color: AppColors.textPrimary,
-    letterSpacing: -0.5,
-  );
+  TextStyle get bodyTertiary => _base.copyWith(
+        fontSize: 14,
+        fontWeight: FontWeight.w400,
+        color: _colors.textTertiary,
+      );
 
-  // Onboarding — body
-  static const TextStyle onboardingBody = TextStyle(
-    fontSize: 17,
-    fontWeight: FontWeight.w400,
-    color: AppColors.textMuted,
-    height: 1.5,
-  );
+  TextStyle get caption => _base.copyWith(
+        fontSize: 12,
+        fontWeight: FontWeight.w500,
+        letterSpacing: 0.5,
+        color: _colors.textTertiary,
+      );
 
-  // Card label (e.g. "Total spent")
-  static const TextStyle cardLabel = TextStyle(
-    fontSize: 14,
-    fontWeight: FontWeight.w500,
-    color: AppColors.textMuted,
-  );
+  TextStyle get chipLabel => _base.copyWith(
+        fontSize: 14,
+        fontWeight: FontWeight.w400,
+        color: _colors.textSecondary,
+      );
 
-  // Pie chart legend label
-  static const TextStyle pieLabel = TextStyle(
-    fontSize: 11,
-    fontWeight: FontWeight.w500,
-    color: AppColors.textMuted,
-  );
+  TextStyle get button => _base.copyWith(
+        fontSize: 16,
+        fontWeight: FontWeight.w500,
+        color: _colors.surfaceRaised,
+      );
+
+  TextStyle get onboardingTitle => _base.copyWith(
+        fontSize: 40,
+        fontWeight: FontWeight.w600,
+        color: _colors.textPrimary,
+      );
+
+  TextStyle get onboardingBody => _base.copyWith(
+        fontSize: 14,
+        fontWeight: FontWeight.w400,
+        color: _colors.textSecondary,
+      );
+
+  TextStyle get cardLabel => _base.copyWith(
+        fontSize: 12,
+        fontWeight: FontWeight.w500,
+        letterSpacing: 0.5,
+        color: _colors.textTertiary,
+      );
+
+  TextStyle get pieLabel => _base.copyWith(
+        fontSize: 14,
+        fontWeight: FontWeight.w400,
+        color: _colors.textSecondary,
+      );
+
+  TextStyle get slicePercent => _base.copyWith(
+        fontSize: 12,
+        fontWeight: FontWeight.w500,
+        color: _colors.surfaceRaised,
+      );
+
+  TextStyle get destructive => _base.copyWith(
+        fontSize: 14,
+        fontWeight: FontWeight.w500,
+        color: _colors.signalExpense,
+      );
 }

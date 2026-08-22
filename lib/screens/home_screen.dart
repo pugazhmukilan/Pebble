@@ -1,29 +1,63 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../blocs/expense/expense_cubit.dart';
 import '../blocs/expense/expense_state.dart';
 import '../models/expense.dart';
 import '../theme/app_colors.dart';
+import '../theme/app_spacing.dart';
 import '../theme/app_text_styles.dart';
 import '../widgets/expense_entry_sheet.dart';
 import '../widgets/expense_list.dart';
 import '../widgets/month_header.dart';
 import '../widgets/month_picker_sheet.dart';
 import '../widgets/total_summary_card.dart';
+import 'analysis_screen.dart';
 import 'settings_screen.dart';
 
 /// Main screen: month header → total card → pie chart → expense list → FAB.
-class HomeScreen extends StatelessWidget {
+/// The obscure toggle hides amount figures and remembers the preference.
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  static const _obscureKey = 'obscure_amounts';
+  bool _obscured = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadObscurePreference();
+  }
+
+  Future<void> _loadObscurePreference() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (mounted) {
+      setState(() => _obscured = prefs.getBool(_obscureKey) ?? false);
+    }
+  }
+
+  Future<void> _toggleObscured() async {
+    final prefs = await SharedPreferences.getInstance();
+    final next = !_obscured;
+    setState(() => _obscured = next);
+    await prefs.setBool(_obscureKey, next);
+  }
 
   void _openAddSheet(BuildContext context) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.of(context).surfaceBase,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(AppSpacing.radiusCard),
+        ),
       ),
       builder: (_) => BlocProvider.value(
         value: context.read<ExpenseCubit>(),
@@ -36,9 +70,11 @@ class HomeScreen extends StatelessWidget {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.of(context).surfaceBase,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(AppSpacing.radiusCard),
+        ),
       ),
       builder: (_) => BlocProvider.value(
         value: context.read<ExpenseCubit>(),
@@ -50,9 +86,11 @@ class HomeScreen extends StatelessWidget {
   void _openMonthPicker(BuildContext context, int year, int month) {
     showModalBottomSheet(
       context: context,
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.of(context).surfaceBase,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(AppSpacing.radiusCard),
+        ),
       ),
       builder: (_) => MonthPickerSheet(
         selectedYear: year,
@@ -69,23 +107,62 @@ class HomeScreen extends StatelessWidget {
     ).push(MaterialPageRoute(builder: (_) => const SettingsScreen()));
   }
 
+  void _openAnalysis(BuildContext context) {
+    Navigator.of(
+      context,
+    ).push(MaterialPageRoute(builder: (_) => const AnalysisScreen()));
+  }
+
   @override
   Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
+    final styles = AppTextStyles.of(context);
+
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: colors.surfaceBase,
+      appBar: AppBar(
+        leading: Padding(
+          padding: const EdgeInsets.only(left: 12),
+          child: Image.asset(
+            'assets/images/pebble_logo.png',
+            width: 32,
+            height: 32,
+            fit: BoxFit.contain,
+          ),
+        ),
+        title: Text('Pebble', style: styles.screenTitle),
+        centerTitle: false,
+        actions: [
+          IconButton(
+            onPressed: () => _openAnalysis(context),
+            icon: const Icon(Icons.bar_chart_rounded),
+            iconSize: 22,
+            color: colors.textPrimary,
+            visualDensity: VisualDensity.compact,
+          ),
+          IconButton(
+            onPressed: () => _openSettings(context),
+            icon: const Icon(Icons.tune_rounded),
+            iconSize: 22,
+            color: colors.textPrimary,
+            visualDensity: VisualDensity.compact,
+          ),
+          const SizedBox(width: 4),
+        ],
+      ),
       body: SafeArea(
         child: BlocBuilder<ExpenseCubit, ExpenseState>(
           builder: (context, state) {
             if (state is ExpenseLoading || state is ExpenseInitial) {
-              return const Center(
-                child: CircularProgressIndicator(color: AppColors.accent),
+              return Center(
+                child: CircularProgressIndicator(color: colors.textPrimary),
               );
             }
             if (state is ExpenseError) {
               return Center(
                 child: Text(
                   'Error: ${state.message}',
-                  style: AppTextStyles.cardLabel,
+                  style: styles.cardLabel,
                 ),
               );
             }
@@ -110,38 +187,24 @@ class HomeScreen extends StatelessWidget {
                 children: [
                   // Fixed month header
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    child: Stack(
-                      children: [
-                        SizedBox(
-                          width: double.infinity,
-                          child: MonthHeader(
-                            year: loaded.selectedYear,
-                            month: loaded.selectedMonth,
-                            hasNext: !loaded.isCurrentMonth,
-                            onPrevious: () => context
-                                .read<ExpenseCubit>()
-                                .previousMonth(),
-                            onNext: () =>
-                                context.read<ExpenseCubit>().nextMonth(),
-                            onCalendarTap: () => _openMonthPicker(
-                              context,
-                              loaded.selectedYear,
-                              loaded.selectedMonth,
-                            ),
-                          ),
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    child: SizedBox(
+                      width: double.infinity,
+                      child: MonthHeader(
+                        year: loaded.selectedYear,
+                        month: loaded.selectedMonth,
+                        hasNext: !loaded.isCurrentMonth,
+                        onPrevious: () => context
+                            .read<ExpenseCubit>()
+                            .previousMonth(),
+                        onNext: () =>
+                            context.read<ExpenseCubit>().nextMonth(),
+                        onCalendarTap: () => _openMonthPicker(
+                          context,
+                          loaded.selectedYear,
+                          loaded.selectedMonth,
                         ),
-                        Positioned(
-                          right: 0,
-                          top: 4,
-                          child: IconButton(
-                            onPressed: () => _openSettings(context),
-                            icon: const Icon(Icons.settings_rounded),
-                            iconSize: 22,
-                            color: AppColors.textMuted,
-                          ),
-                        ),
-                      ],
+                      ),
                     ),
                   ),
 
@@ -195,16 +258,20 @@ class HomeScreen extends StatelessWidget {
                             SliverToBoxAdapter(
                               child: Padding(
                                 padding:
-                                    const EdgeInsets.symmetric(horizontal: 20),
+                                    const EdgeInsets.symmetric(horizontal: 12),
                                 child: Column(
                                   children: [
                                     // Total summary card with category breakdown
                                     TotalSummaryCard(
                                       total: loaded.total,
+                                      previousMonthTotal:
+                                          loaded.previousMonthTotal,
                                       categoryBreakdown:
                                           loaded.categoryBreakdown,
                                       categories: loaded.categories,
                                       lastExportDate: loaded.lastExportDate,
+                                      obscured: _obscured,
+                                      onToggleObscured: _toggleObscured,
                                     ),
                                     const SizedBox(height: 12),
 
@@ -213,6 +280,7 @@ class HomeScreen extends StatelessWidget {
                                       expenses: loaded.expenses,
                                       categories: loaded.categories,
                                       isCurrentMonth: loaded.isCurrentMonth,
+                                      obscured: _obscured,
                                       onDelete: (expense) => context
                                           .read<ExpenseCubit>()
                                           .deleteExpense(expense),
@@ -220,8 +288,8 @@ class HomeScreen extends StatelessWidget {
                                           _openEditSheet(context, expense),
                                     ),
 
-                                    // Bottom clearance for FAB
-                                    const SizedBox(height: 80),
+                                    // Bottom clearance for FAB (height + 24)
+                                    const SizedBox(height: AppSpacing.fabClearance),
                                   ],
                                 ),
                               ),

@@ -28,7 +28,17 @@ class ExpenseCubit extends Cubit<ExpenseState> {
       );
       final categories = await repository.getCategories();
       final lastExport = await repository.getLastExportDate();
-      _emitLoaded(expenses, categories, lastExport);
+
+      // Month-over-month ticker: total of the month before the selection.
+      int prevYear = _selectedYear, prevMonth = _selectedMonth - 1;
+      if (prevMonth == 0) {
+        prevYear--;
+        prevMonth = 12;
+      }
+      final previousMonthTotal =
+          await repository.getTotalForMonth(prevYear, prevMonth);
+
+      _emitLoaded(expenses, categories, lastExport, previousMonthTotal);
     } catch (e) {
       emit(ExpenseError(e.toString()));
     }
@@ -141,6 +151,7 @@ class ExpenseCubit extends Cubit<ExpenseState> {
           selectedYear: current.selectedYear,
           selectedMonth: current.selectedMonth,
           isCurrentMonth: current.isCurrentMonth,
+          previousMonthTotal: current.previousMonthTotal,
           lastExportDate: lastExport,
         ),
       );
@@ -152,6 +163,7 @@ class ExpenseCubit extends Cubit<ExpenseState> {
     List<Expense> expenses,
     List<ExpenseCategory> categories,
     DateTime? lastExport,
+    double previousMonthTotal,
   ) {
     final now = DateTime.now();
     final isCurrentMonth =
@@ -177,6 +189,7 @@ class ExpenseCubit extends Cubit<ExpenseState> {
         selectedYear: _selectedYear,
         selectedMonth: _selectedMonth,
         isCurrentMonth: isCurrentMonth,
+        previousMonthTotal: previousMonthTotal,
         lastExportDate: lastExport,
         monthDirection: direction,
       ),

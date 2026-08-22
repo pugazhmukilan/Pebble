@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import '../models/category.dart';
 import '../models/expense.dart';
 import '../theme/app_colors.dart';
+import '../theme/app_spacing.dart';
 import '../theme/app_text_styles.dart';
 import '../utils/amount_formatter.dart';
 import 'category_icon.dart';
@@ -11,6 +12,9 @@ import 'category_icon.dart';
 /// Expense list grouped by day, most recent first.
 /// Tap a row → details with edit. Swipe → delete, both gated by
 /// isCurrentMonth (§8).
+///
+/// Rows sit directly on the surface base separated by 1px hairline dividers
+/// (§4) — no per-row card wrapper. Icon chips are neutral (§4).
 class ExpenseList extends StatelessWidget {
   const ExpenseList({
     super.key,
@@ -19,6 +23,7 @@ class ExpenseList extends StatelessWidget {
     required this.isCurrentMonth,
     required this.onDelete,
     required this.onEdit,
+    this.obscured = false,
   });
 
   final List<Expense> expenses;
@@ -26,8 +31,8 @@ class ExpenseList extends StatelessWidget {
   final bool isCurrentMonth;
   final void Function(Expense) onDelete;
   final void Function(Expense) onEdit;
+  final bool obscured;
 
-  /// Group expenses by day (date only, no time).
   Map<DateTime, List<Expense>> _groupByDay() {
     final grouped = <DateTime, List<Expense>>{};
     for (final expense in expenses) {
@@ -50,19 +55,22 @@ class ExpenseList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
+    final styles = AppTextStyles.of(context);
+
     if (expenses.isEmpty) {
-      return const Padding(
-        padding: EdgeInsets.symmetric(vertical: 40),
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: AppSpacing.xl),
         child: Center(
           child: Column(
             children: [
               Icon(
                 Icons.receipt_long_rounded,
                 size: 48,
-                color: AppColors.accentDisabled,
+                color: colors.textTertiary,
               ),
-              SizedBox(height: 12),
-              Text('No expenses this month', style: AppTextStyles.cardLabel),
+              const SizedBox(height: AppSpacing.sm),
+              Text('No expenses this month', style: styles.cardLabel),
             ],
           ),
         ),
@@ -91,10 +99,15 @@ class ExpenseList extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Padding(
-              padding: const EdgeInsets.only(top: 12, bottom: 4),
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.md,
+                AppSpacing.sm,
+                AppSpacing.md,
+                AppSpacing.xs,
+              ),
               child: Text(
                 label.toUpperCase(),
-                style: AppTextStyles.sectionHeader,
+                style: styles.sectionLabel,
               ),
             ),
             ...dayExpenses.map(
@@ -102,6 +115,7 @@ class ExpenseList extends StatelessWidget {
                 expense: expense,
                 category: _categoryFor(expense),
                 isEditable: isCurrentMonth,
+                obscured: obscured,
                 onTap: () => _showDetails(context, expense),
                 onDelete: isCurrentMonth ? () => onDelete(expense) : null,
               ),
@@ -113,86 +127,93 @@ class ExpenseList extends StatelessWidget {
   }
 
   void _showDetails(BuildContext context, Expense expense) {
+    final colors = AppColors.of(context);
+    final styles = AppTextStyles.of(context);
     final category = _categoryFor(expense);
-    final color = Color(category.colorValue);
 
     showModalBottomSheet(
       context: context,
-      backgroundColor: AppColors.background,
+      backgroundColor: colors.surfaceRaised,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(AppSpacing.radiusCard),
+        ),
       ),
       builder: (sheetCtx) => SafeArea(
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.lg,
+            AppSpacing.xs,
+            AppSpacing.md,
+            AppSpacing.lg,
+          ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              Align(
+                alignment: Alignment.centerRight,
+                child: isCurrentMonth
+                    ? IconButton(
+                        onPressed: () {
+                          Navigator.of(sheetCtx).pop();
+                          onEdit(expense);
+                        },
+                        icon: const Icon(Icons.edit_rounded),
+                        iconSize: 20,
+                        color: colors.textSecondary,
+                        visualDensity: VisualDensity.compact,
+                      )
+                    : const SizedBox(height: 40),
+              ),
               Center(
                 child: Container(
                   width: 48,
                   height: 48,
                   decoration: BoxDecoration(
-                    color: color.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(14),
+                    color: colors.surfaceBase,
+                    borderRadius:
+                        BorderRadius.circular(AppSpacing.radiusChip),
+                    border: Border.all(color: colors.borderHairline, width: 0.5),
                   ),
                   child: CategoryIcon(
                     category: category,
                     size: 24,
-                    color: color,
+                    color: colors.textPrimary,
                   ),
                 ),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: AppSpacing.sm),
               Center(
-                child: Text(category.label, style: AppTextStyles.monthHeader),
+                child: Text(category.label, style: styles.screenTitle),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: AppSpacing.xs),
               FittedBox(
                 fit: BoxFit.scaleDown,
                 child: Text(
-                  '₹${expense.amount.toStringAsFixed(2)}',
-                  style: AppTextStyles.totalAmount,
+                  obscured
+                      ? kObscuredAmount
+                      : '₹${expense.amount.toStringAsFixed(2)}',
+                  style: styles.totalAmount,
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: AppSpacing.md),
               Center(
                 child: Text(
                   DateFormat('EEEE, MMMM d, yyyy').format(expense.date),
-                  style: AppTextStyles.cardLabel,
+                  style: styles.cardLabel,
                 ),
               ),
               if (expense.note != null && expense.note!.isNotEmpty) ...[
-                const SizedBox(height: 8),
+                const SizedBox(height: AppSpacing.xs),
                 Center(
                   child: Text(
                     expense.note!,
-                    style: AppTextStyles.expenseNote,
+                    style: styles.body,
                     textAlign: TextAlign.center,
                   ),
                 ),
               ],
-              const SizedBox(height: 20),
-              if (isCurrentMonth)
-                SizedBox(
-                  height: 44,
-                  child: OutlinedButton.icon(
-                    onPressed: () {
-                      Navigator.of(sheetCtx).pop();
-                      onEdit(expense);
-                    },
-                    icon: const Icon(Icons.edit_rounded, size: 18),
-                    label: const Text('Edit expense'),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: AppColors.textPrimary,
-                      side: const BorderSide(color: AppColors.border),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                  ),
-                ),
             ],
           ),
         ),
@@ -202,11 +223,13 @@ class ExpenseList extends StatelessWidget {
 }
 
 /// Single expense row with category icon, label, note, and amount.
+/// Sits directly on the surface base with a 1px hairline divider (§4).
 class _ExpenseRow extends StatelessWidget {
   const _ExpenseRow({
     required this.expense,
     required this.category,
     required this.isEditable,
+    this.obscured = false,
     this.onTap,
     this.onDelete,
   });
@@ -214,41 +237,49 @@ class _ExpenseRow extends StatelessWidget {
   final Expense expense;
   final ExpenseCategory category;
   final bool isEditable;
+  final bool obscured;
   final VoidCallback? onTap;
   final VoidCallback? onDelete;
 
   @override
   Widget build(BuildContext context) {
-    final color = Color(category.colorValue);
+    final colors = AppColors.of(context);
+    final styles = AppTextStyles.of(context);
 
     final row = Container(
-      margin: const EdgeInsets.only(bottom: 1),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: AppSpacing.sm,
+      ),
       decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(14),
+        border: Border(
+          bottom: BorderSide(color: colors.borderHairline, width: 0.5),
+        ),
       ),
       child: Row(
         children: [
-          // Category icon
           Container(
             width: 40,
             height: 40,
             decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(12),
+              color: colors.surfaceRaised,
+              borderRadius: BorderRadius.circular(AppSpacing.radiusChip),
+              border: Border.all(color: colors.borderHairline, width: 0.5),
             ),
-            child: CategoryIcon(category: category, size: 20, color: color),
+            child: CategoryIcon(
+              category: category,
+              size: 20,
+              color: colors.textPrimary,
+            ),
           ),
-          const SizedBox(width: 12),
-          // Label + note
+          const SizedBox(width: AppSpacing.sm),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   category.label,
-                  style: AppTextStyles.expenseLabel,
+                  style: styles.listRowTitle,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -257,7 +288,7 @@ class _ExpenseRow extends StatelessWidget {
                     padding: const EdgeInsets.only(top: 2),
                     child: Text(
                       expense.note!,
-                      style: AppTextStyles.expenseNote,
+                      style: styles.body,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -265,11 +296,12 @@ class _ExpenseRow extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(width: 12),
-          // Amount — compact when large so the label keeps its space
+          const SizedBox(width: AppSpacing.sm),
           Text(
-            '₹${formatCompactAmount(expense.amount)}',
-            style: AppTextStyles.expenseAmount,
+            obscured
+                ? kObscuredAmount
+                : '₹${formatCompactAmount(expense.amount)}',
+            style: styles.listRowSecondary,
           ),
         ],
       ),
@@ -284,38 +316,119 @@ class _ExpenseRow extends StatelessWidget {
       direction: DismissDirection.endToStart,
       background: Container(
         alignment: Alignment.centerRight,
-        padding: const EdgeInsets.only(right: 20),
-        margin: const EdgeInsets.only(bottom: 1),
-        decoration: BoxDecoration(
-          color: AppColors.destructive,
-          borderRadius: BorderRadius.circular(14),
-        ),
-        child: const Icon(Icons.delete_rounded, color: Colors.white),
+        padding: const EdgeInsets.only(right: AppSpacing.lg),
+        color: colors.signalExpense,
+        child: Icon(Icons.delete_rounded, color: colors.surfaceRaised),
       ),
-      confirmDismiss: (_) async {
-        return await showDialog<bool>(
-          context: context,
-          builder: (ctx) => AlertDialog(
-            title: const Text('Delete expense?'),
-            content: const Text('This action cannot be undone.'),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(ctx, false),
-                child: const Text('Cancel'),
-              ),
-              TextButton(
-                onPressed: () => Navigator.pop(ctx, true),
-                style: TextButton.styleFrom(
-                  foregroundColor: AppColors.destructive,
-                ),
-                child: const Text('Delete'),
-              ),
-            ],
-          ),
-        );
-      },
+      confirmDismiss: (_) => _confirmDelete(context),
       onDismissed: (_) => onDelete?.call(),
       child: GestureDetector(onTap: onTap, child: row),
     );
+  }
+
+  Future<bool> _confirmDelete(BuildContext context) async {
+    final colors = AppColors.of(context);
+    final styles = AppTextStyles.of(context);
+    final result = await showModalBottomSheet<bool>(
+      context: context,
+      backgroundColor: colors.surfaceRaised,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(AppSpacing.radiusCard),
+        ),
+      ),
+      builder: (sheetCtx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.md),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Center(
+                child: Container(
+                  width: 36,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: colors.borderHairline,
+                    borderRadius:
+                        BorderRadius.circular(AppSpacing.radiusPill),
+                  ),
+                ),
+              ),
+              const SizedBox(height: AppSpacing.lg),
+              Center(
+                child: Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: colors.signalExpense.withValues(alpha: 0.12),
+                    borderRadius:
+                        BorderRadius.circular(AppSpacing.radiusChip),
+                  ),
+                  child: Icon(
+                    Icons.delete_outline_rounded,
+                    color: colors.signalExpense,
+                    size: 24,
+                  ),
+                ),
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              Center(
+                child: Text('Delete expense?', style: styles.screenTitle),
+              ),
+              const SizedBox(height: AppSpacing.xs),
+              Center(
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    '₹${expense.amount.toStringAsFixed(2)}',
+                    style: styles.totalAmount,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 4),
+              Center(
+                child: Text(
+                  "${category.label} · Can't be undone",
+                  style: styles.body,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.lg),
+              SizedBox(
+                height: 52,
+                child: ElevatedButton(
+                  onPressed: () => Navigator.pop(sheetCtx, true),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: colors.signalExpense,
+                    foregroundColor: colors.surfaceRaised,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(AppSpacing.radiusChip),
+                    ),
+                  ),
+                  child: Text('Delete', style: styles.button),
+                ),
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              SizedBox(
+                height: 52,
+                child: OutlinedButton(
+                  onPressed: () => Navigator.pop(sheetCtx, false),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: colors.textPrimary,
+                    side: BorderSide(color: colors.borderHairline),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(AppSpacing.radiusChip),
+                    ),
+                  ),
+                  child: Text('Cancel', style: styles.listRowTitle),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+    return result ?? false;
   }
 }

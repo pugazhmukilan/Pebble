@@ -13,8 +13,11 @@ class OnboardingScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
+    final styles = AppTextStyles.of(context);
+
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: colors.surfaceBase,
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 32),
@@ -22,28 +25,21 @@ class OnboardingScreen extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const Spacer(flex: 3),
-              // App icon
-              Container(
-                width: 72,
-                height: 72,
-                decoration: BoxDecoration(
-                  color: AppColors.accent,
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: const Icon(
-                  Icons.account_balance_wallet_rounded,
-                  size: 36,
-                  color: Colors.white,
-                ),
+              // App logo
+              Image.asset(
+                'assets/images/pebble_logo.png',
+                width: 96,
+                height: 96,
+                fit: BoxFit.contain,
               ),
               const SizedBox(height: 32),
-              const Text('Pebble', style: AppTextStyles.onboardingTitle),
+              Text('Pebble', style: styles.onboardingTitle),
               const SizedBox(height: 12),
-              const Text(
+              Text(
                 'Manual-only expense tracking.\n'
                 'Private. Local. Fast entry.\n'
                 'Your data never leaves your device.',
-                style: AppTextStyles.onboardingBody,
+                style: styles.onboardingBody,
               ),
               const Spacer(flex: 4),
               // Get Started button
@@ -58,14 +54,14 @@ class OnboardingScreen extends StatelessWidget {
                     );
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.accent,
-                    foregroundColor: Colors.white,
+                    backgroundColor: colors.textPrimary,
+                    foregroundColor: colors.surfaceRaised,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16),
                     ),
                     elevation: 0,
                   ),
-                  child: const Text('Get Started', style: AppTextStyles.button),
+                  child: Text('Get Started', style: styles.button),
                 ),
               ),
               const SizedBox(height: 48),

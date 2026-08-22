@@ -7,10 +7,11 @@
 
   A calm, fast, manual-only money journal for people who want to *know* where their money goes — without giving a single byte of it to the cloud.
 
-  ![Platform](https://img.shields.io/badge/platform-Flutter%20%7C%20iOS%20%26%20Android-blue)
-  ![Privacy](https://img.shields.io/badge/privacy-100%25%20offline-brightgreen)
-  ![Version](https://img.shields.io/badge/version-0.2.0-9cf)
-
+  <p>
+    <img src="https://img.shields.io/badge/platform-Flutter%20%7C%20iOS%20%26%20Android-blue" alt="Platform" />
+    <img src="https://img.shields.io/badge/privacy-100%25%20offline-brightgreen" alt="Privacy" />
+    <img src="https://img.shields.io/badge/version-0.2.0-9cf" alt="Version" />
+  </p>
 </div>
 
 ---
@@ -22,7 +23,7 @@ Most finance apps want your email, your bank login, and a subscription. **Pebble
 Pebble is built on a single idea: *your spending is your business.* It runs entirely on your device, opens to a clean monthly view, and lets you log an expense in three taps. No accounts. No sync. No ads. No nudges to upgrade.
 
 | | Pebble | Typical finance app |
-|---|---|---|
+|---|:---:|:---:|
 | Account required | ❌ Never | ✅ Usually |
 | Data leaves your phone | ❌ Never | ⚠️ Often |
 | Subscriptions | ❌ None | 💸 Common |
@@ -33,30 +34,71 @@ Pebble is built on a single idea: *your spending is your business.* It runs enti
 
 ## 📸 A look inside
 
-<div align="center">
+Pebble ships a restrained, Apple-infused design system that feels right in **both light and dark**. Every screen below shows the light variant first, then its dark counterpart.
 
-  ### Home — your month, at a glance
-  <img src="assets/images/home_page.jpeg" alt="Pebble home screen" width="320" />
+### 🏠 Home — your month, at a glance
 
-  *Month header, big total, an at-a-glance category donut, and a day-grouped list. Tap the "+" to log a spend in seconds.*
+Month header, a big total, an at-a-glance category donut, and a day-grouped list. Tap **"+"** to log a spend in seconds.
 
-  ### Log it fast
-  <img src="assets/images/add_expense_page.jpeg" alt="Add expense sheet" width="320" />
+<table>
+  <tr>
+    <td align="center"><b>Light</b></td>
+    <td align="center"><b>Dark</b></td>
+  </tr>
+  <tr>
+    <td><img src="assets/images/home_page.jpeg" alt="Home — light" width="280" /></td>
+    <td><img src="assets/images/darktheme_home_page.jpeg" alt="Home — dark" width="280" /></td>
+  </tr>
+</table>
 
-  *One bottom sheet handles both adding and editing: pick a date, tap a category, type the amount, add an optional note. That's it.*
+### ➕ Log it fast
 
-  ### Understand your habits
-  <img src="assets/images/analysis_page.jpeg" alt="Analysis screen" width="320" />
-  <img src="assets/images/analysis_6m.jpeg" alt="Six-month analysis" width="320" />
+One bottom sheet handles both adding and editing: pick a date, tap a category, type the amount, add an optional note. That's it.
 
-  *Interactive trend lines, month-over-month deltas, and a category breakdown — across 3M, 6M, or 1Y.*
+<table>
+  <tr>
+    <td align="center"><b>Light</b></td>
+    <td align="center"><b>Dark</b></td>
+  </tr>
+  <tr>
+    <td><img src="assets/images/add_expense_page.jpeg" alt="Add expense — light" width="280" /></td>
+    <td><img src="assets/images/darktheme_add_expense_page.jpeg" alt="Add expense — dark" width="280" /></td>
+  </tr>
+</table>
 
-  ### Make it yours
-  <img src="assets/images/new_category_adding)page.jpeg" alt="Adding a category" width="320" />
+### 📊 Understand your habits
 
-  *Create your own categories so Pebble speaks your language.*
+Interactive trend lines, month-over-month deltas, and a category breakdown — across **3M**, **6M**, or **1Y**.
 
-</div>
+<table>
+  <tr>
+    <td align="center"><b>Light</b></td>
+    <td align="center"><b>Dark</b></td>
+  </tr>
+  <tr>
+    <td><img src="assets/images/analysis_1.jpeg" alt="Analysis 1 — light" width="280" /></td>
+    <td><img src="assets/images/darktheme_analysis_1.jpeg" alt="Analysis 1 — dark" width="280" /></td>
+  </tr>
+  <tr>
+    <td><img src="assets/images/analysis_2.jpeg" alt="Analysis 2 — light" width="280" /></td>
+    <td><img src="assets/images/darktheme_analysis_2.jpeg" alt="Analysis 2 — dark" width="280" /></td>
+  </tr>
+</table>
+
+### ⚙️ Settings — yours to control
+
+Switch appearance, export your data as CSV or JSON, and import it back whenever you like.
+
+<table>
+  <tr>
+    <td align="center"><b>Light</b></td>
+    <td align="center"><b>Dark</b></td>
+  </tr>
+  <tr>
+    <td><img src="assets/images/new_category_adding)page.jpeg" alt="Add category — light" width="280" /></td>
+    <td><img src="assets/images/darktheme_settings.jpeg" alt="Settings — dark" width="280" /></td>
+  </tr>
+</table>
 
 ---
 

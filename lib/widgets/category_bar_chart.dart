@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../constants/category_colors.dart';
 import '../models/category.dart';
+import '../utils/amount_formatter.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_text_styles.dart';
@@ -98,11 +99,13 @@ class CategoryBarChart extends StatelessWidget {
               ),
               const SizedBox(width: AppSpacing.s),
               SizedBox(
-                width: 36,
+                width: 44,
                 child: Text(
-                  '${pct.toStringAsFixed(0)}%',
+                  formatPercent(pct),
                   style: styles.pieLabel,
                   textAlign: TextAlign.right,
+                  maxLines: 1,
+                  softWrap: false,
                 ),
               ),
             ],

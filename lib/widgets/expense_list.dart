@@ -300,7 +300,7 @@ class _ExpenseRow extends StatelessWidget {
           Text(
             obscured
                 ? kObscuredAmount
-                : '₹${formatCompactAmount(expense.amount)}',
+                : '₹${formatFullAmount(expense.amount)}',
             style: styles.listRowSecondary,
           ),
         ],
@@ -344,17 +344,6 @@ class _ExpenseRow extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Center(
-                child: Container(
-                  width: 36,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: colors.borderHairline,
-                    borderRadius:
-                        BorderRadius.circular(AppSpacing.radiusPill),
-                  ),
-                ),
-              ),
               const SizedBox(height: AppSpacing.lg),
               Center(
                 child: Container(

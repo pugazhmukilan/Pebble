@@ -140,12 +140,12 @@ class CategoryGrid extends StatelessWidget {
     final styles = AppTextStyles.of(context);
 
     return GridView.count(
-      crossAxisCount: 4,
+      crossAxisCount: 5,
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      mainAxisSpacing: AppSpacing.sm,
-      crossAxisSpacing: AppSpacing.sm,
-      childAspectRatio: 1,
+      mainAxisSpacing: AppSpacing.xs,
+      crossAxisSpacing: AppSpacing.xs,
+      childAspectRatio: 0.95,
       children: [
         ...categories.map((category) {
           final isSelected = category.id == selectedCategoryId;
@@ -169,7 +169,7 @@ class CategoryGrid extends StatelessWidget {
                 children: [
                   CategoryIcon(
                     category: category,
-                    size: 24,
+                    size: 22,
                     color:
                         isSelected ? colors.textPrimary : colors.textSecondary,
                   ),
@@ -184,8 +184,9 @@ class CategoryGrid extends StatelessWidget {
                           ? styles.chipLabel.copyWith(
                               color: colors.textPrimary,
                               fontWeight: FontWeight.w500,
+                              fontSize: 12,
                             )
-                          : styles.chipLabel,
+                          : styles.chipLabel.copyWith(fontSize: 12),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -207,9 +208,9 @@ class CategoryGrid extends StatelessWidget {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.add_rounded, size: 24, color: colors.textSecondary),
+                Icon(Icons.add_rounded, size: 22, color: colors.textSecondary),
                 const SizedBox(height: AppSpacing.xs),
-                Text('Add New', style: styles.chipLabel),
+                Text('Add New', style: styles.chipLabel.copyWith(fontSize: 12)),
               ],
             ),
           ),

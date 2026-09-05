@@ -28,8 +28,8 @@ class OnboardingScreen extends StatelessWidget {
               // App logo
               Image.asset(
                 'assets/images/pebble_logo.png',
-                width: 96,
-                height: 96,
+                width: 64,
+                height: 64,
                 fit: BoxFit.contain,
               ),
               const SizedBox(height: 32),

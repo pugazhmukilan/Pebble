@@ -114,7 +114,7 @@ class CategoryPieChart extends StatelessWidget {
                       value: entry.amount,
                       color: color,
                       radius: outerRadius,
-                      title: pct >= 8 ? '${pct.toStringAsFixed(0)}%' : '',
+                      title: pct >= 8 ? formatPercent(pct) : '',
                       titleStyle: styles.slicePercent,
                     );
                   }).toList(),
@@ -200,8 +200,10 @@ class CategoryPieChart extends StatelessWidget {
               ),
               const SizedBox(height: 2),
               Text(
-                '${pct.toStringAsFixed(0)}%',
+                formatPercent(pct),
                 style: styles.bodyTertiary,
+                maxLines: 1,
+                softWrap: false,
               ),
             ],
           ),
@@ -256,11 +258,13 @@ class CategoryPieChart extends StatelessWidget {
           ),
           const SizedBox(width: AppSpacing.s),
           SizedBox(
-            width: 36,
+            width: 44,
             child: Text(
-              '${pct.toStringAsFixed(0)}%',
+              formatPercent(pct),
               style: styles.pieLabel,
               textAlign: TextAlign.right,
+              maxLines: 1,
+              softWrap: false,
             ),
           ),
         ],

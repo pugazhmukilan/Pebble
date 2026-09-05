@@ -40,3 +40,10 @@ String _trim(double value) {
   if (value == value.roundToDouble()) return value.toInt().toString();
   return value.toStringAsFixed(1);
 }
+
+/// Percentage formatting that shows one decimal place only when needed,
+/// e.g. `50` → `"50%"`, `33.333` → `"33.3%"`. Handles negatives.
+String formatPercent(double value) {
+  if (value == value.roundToDouble()) return '${value.round()}%';
+  return '${value.toStringAsFixed(1)}%';
+}

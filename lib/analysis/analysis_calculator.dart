@@ -248,7 +248,7 @@ class AnalysisCalculator {
         insights.add(
           Insight(
             kind: InsightKind.spike,
-            title: '${_monthName(spike.month)} spiked ${pct.round()}% above average',
+            title: '${_monthName(spike.month)} spiked ${formatPercent(pct)} above average',
             body: '₹${formatCompactAmount(spike.total)} vs a ₹${formatCompactAmount(avg)} monthly average',
           ),
         );

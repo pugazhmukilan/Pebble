@@ -33,6 +33,17 @@ class DateRange extends Equatable {
     return DateRange(start: monthStart, endInclusive: _endOfMonth(monthStart));
   }
 
+  /// Covers every whole month from [startMonth] through [endMonth],
+  /// inclusive. Used by the custom analysis range picker.
+  factory DateRange.range({
+    required DateTime startMonth,
+    required DateTime endMonth,
+  }) {
+    final start = DateTime(startMonth.year, startMonth.month);
+    final end = DateTime(endMonth.year, endMonth.month);
+    return DateRange(start: start, endInclusive: _endOfMonth(end));
+  }
+
   /// First day of the first month (00:00).
   final DateTime start;
 

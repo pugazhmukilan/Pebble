@@ -3,7 +3,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../analysis/analysis_calculator.dart';
 import '../../analysis/analysis_models.dart';
 import '../../data/expense_repository.dart';
-import '../../models/category.dart';
 import '../../models/date_range.dart';
 import '../../models/expense.dart';
 import 'analysis_state.dart';
@@ -20,13 +19,11 @@ class AnalysisCubit extends Cubit<AnalysisState> {
 
   AnalysisRangePreset _preset = AnalysisRangePreset.thisMonth;
 
-  /// Category ids pinned for the per-category trend (max 3).
-  final List<String> _pinned = [];
+  /// Selected start/end months for the [AnalysisRangePreset.custom] range.
+  DateTime? _customStart;
+  DateTime? _customEnd;
 
   List<Expense>? _allExpenses;
-  DateRange? _lastRange;
-  List<Expense>? _lastExpenses;
-  List<ExpenseCategory>? _lastCategories;
 
   /// Load (fresh) analysis for the current preset.
   Future<void> load() async {
@@ -46,26 +43,23 @@ class AnalysisCubit extends Cubit<AnalysisState> {
     await load();
   }
 
-  /// Pin / unpin a category for the per-category trend chart (max 3).
-  Future<void> toggleCategoryForTrend(String categoryId) async {
-    final loaded = state;
-    if (loaded is! AnalysisLoaded) return;
-
-    final pinned = List<String>.from(loaded.selectedCategoriesForTrend);
-    if (pinned.contains(categoryId)) {
-      pinned.remove(categoryId);
-    } else if (pinned.length < 3) {
-      pinned.add(categoryId);
-    }
-    _pinned
-      ..clear()
-      ..addAll(pinned);
-    _recomputeTrends();
+  /// Switch to a custom range defined by its start and end months.
+  Future<void> selectCustomRange(DateTime start, DateTime end) async {
+    _preset = AnalysisRangePreset.custom;
+    _customStart = DateTime(start.year, start.month);
+    _customEnd = DateTime(end.year, end.month);
+    await load();
   }
 
   Future<void> refresh() => load();
 
   DateRange _resolveRange() {
+    if (_preset == AnalysisRangePreset.custom) {
+      final now = DateTime.now();
+      final start = _customStart ?? DateTime(now.year, now.month - 2);
+      final end = _customEnd ?? DateTime(now.year, now.month);
+      return DateRange.range(startMonth: start, endMonth: end);
+    }
     return DateRange.monthsFromNow(
       monthCount: _preset.defaultMonths,
       now: DateTime.now(),
@@ -85,13 +79,9 @@ class AnalysisCubit extends Cubit<AnalysisState> {
       return;
     }
 
-    final now = DateTime.now();
     final range = _resolveRange();
     final expenses = await repository.getExpenses(range);
     final categories = await repository.getCategories();
-    _lastRange = range;
-    _lastExpenses = expenses;
-    _lastCategories = categories;
 
     final monthlyTotals =
         calculator.computeMonthlyTotals(expenses, range);
@@ -101,36 +91,29 @@ class AnalysisCubit extends Cubit<AnalysisState> {
       foldThreshold: 0,
     );
 
-    // Per-category month-over-month deltas — only meaningful for the
-    // single-month "1M" view.
-    final categoryMonthDeltas =
-        _preset == AnalysisRangePreset.thisMonth
-            ? calculator.computeCategoryMonthDeltas(
-                all,
-                categories,
-                currentMonth: DateTime(now.year, now.month),
-              )
-            : const <CategoryMonthDelta>[];
+    // Per-category month-over-month deltas — meaningful for any single-month
+    // range (the "1M" preset or a custom range narrowed to one month).
+    final categoryMonthDeltas = range.monthCount == 1
+        ? calculator.computeCategoryMonthDeltas(
+            all,
+            categories,
+            currentMonth: DateTime(range.startYear, range.startMonth),
+          )
+        : const <CategoryMonthDelta>[];
 
-    // Auto-pin the top 3 real categories (by share) on first analysis.
-    if (_pinned.isEmpty && breakdown.isNotEmpty) {
-      _pinned.addAll(
-        breakdown
-            .where((s) => s.amount > 0)
-            .where((s) => s.categoryId != 'other')
-            .take(3)
-            .map((s) => s.categoryId),
-      );
-    }
-    final effectivePinned = _pinned.length > 3
-        ? List.of(_pinned.sublist(0, 3))
-        : List<String>.of(_pinned);
+    // Draw a trend line for every category with spend in the range (capped
+    // at the top 10 by amount so the chart stays legible).
+    final topIds = breakdown
+        .where((s) => s.amount > 0)
+        .take(10)
+        .map((s) => s.categoryId)
+        .toSet();
 
     final trends = calculator.computeCategoryTrend(
       expenses,
       range,
       categories,
-      categoryIds: effectivePinned.toSet(),
+      categoryIds: topIds,
     );
 
     final currentTotal = monthlyTotals.fold<double>(0, (s, m) => s + m.total);
@@ -153,41 +136,15 @@ emit(
           range: range,
           categories: categories,
           monthlyTotals: monthlyTotals,
-          dailyTotals: _preset != AnalysisRangePreset.thisMonth &&
-                  range.monthCount == 1
+          dailyTotals: range.monthCount == 1
               ? calculator.computeDailyTotals(expenses, range)
               : const [],
           categoryBreakdown: breakdown,
           categoryMonthDeltas: categoryMonthDeltas,
-          selectedCategoriesForTrend: effectivePinned,
           categoryTrendData: trends,
           rangeComparison: comparison,
           insights: insights,
         ),
       );
-  }
-
-  /// Recompute just the pinned trend series (no repository access).
-  void _recomputeTrends() {
-    final loaded = state;
-    if (loaded is! AnalysisLoaded ||
-        _lastRange == null ||
-        _lastExpenses == null ||
-        _lastCategories == null) {
-      return;
-    }
-    final trends = calculator.computeCategoryTrend(
-      _lastExpenses!,
-      _lastRange!,
-      _lastCategories!,
-      categoryIds: loaded.selectedCategoriesForTrend.toSet(),
-    );
-    emit(
-      loaded.copyWith(
-        selectedCategoriesForTrend:
-            List<String>.from(loaded.selectedCategoriesForTrend),
-        categoryTrendData: trends,
-      ),
-    );
   }
 }

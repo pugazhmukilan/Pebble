@@ -9,7 +9,8 @@ enum AnalysisRangePreset {
   thisMonth('1M', 1),
   threeMonths('3M', 3),
   sixMonths('6M', 6),
-  oneYear('1Y', 12);
+  oneYear('1Y', 12),
+  custom('Custom', 3);
 
   const AnalysisRangePreset(this.label, this.defaultMonths);
   final String label;
@@ -49,7 +50,6 @@ final class AnalysisLoaded extends AnalysisState {
     required this.dailyTotals,
     required this.categoryBreakdown,
     required this.categoryMonthDeltas,
-    required this.selectedCategoriesForTrend,
     required this.categoryTrendData,
     required this.rangeComparison,
     required this.insights,
@@ -69,17 +69,14 @@ final class AnalysisLoaded extends AnalysisState {
   /// category's spend rose or fell versus the previous calendar month.
   final List<CategoryMonthDelta> categoryMonthDeltas;
 
-  /// Category ids currently pinned for the per-category trend (max 3), in
-  /// display order.
-  final List<String> selectedCategoriesForTrend;
+  /// Per-category monthly spend series across the range — one entry per
+  /// category with spend (aligned to `range.months`), drawn as a separate
+  /// line in the category trend chart.
   final List<CategoryTrend> categoryTrendData;
   final RangeComparison rangeComparison;
   final List<Insight> insights;
 
-  AnalysisLoaded copyWith({
-    List<String>? selectedCategoriesForTrend,
-    List<CategoryTrend>? categoryTrendData,
-  }) {
+  AnalysisLoaded copyWith({List<CategoryTrend>? categoryTrendData}) {
     return AnalysisLoaded(
       preset: preset,
       range: range,
@@ -88,8 +85,6 @@ final class AnalysisLoaded extends AnalysisState {
       dailyTotals: dailyTotals,
       categoryBreakdown: categoryBreakdown,
       categoryMonthDeltas: categoryMonthDeltas,
-      selectedCategoriesForTrend:
-          selectedCategoriesForTrend ?? this.selectedCategoriesForTrend,
       categoryTrendData: categoryTrendData ?? this.categoryTrendData,
       rangeComparison: rangeComparison,
       insights: insights,
@@ -105,7 +100,6 @@ final class AnalysisLoaded extends AnalysisState {
     dailyTotals,
     categoryBreakdown,
     categoryMonthDeltas,
-    selectedCategoriesForTrend,
     categoryTrendData,
     rangeComparison,
     insights,

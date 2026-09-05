@@ -1,4 +1,4 @@
-package com.example.pebble
+package com.pugazh.pebble
 
 import io.flutter.embedding.android.FlutterActivity
 

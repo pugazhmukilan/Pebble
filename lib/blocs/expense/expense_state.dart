@@ -37,6 +37,7 @@ final class ExpenseLoaded extends ExpenseState {
     required this.selectedYear,
     required this.selectedMonth,
     required this.isCurrentMonth,
+    this.categoryLimits = const {},
     this.previousMonthTotal = 0,
     this.lastExportDate,
     this.monthDirection = MonthDirection.none,
@@ -49,6 +50,8 @@ final class ExpenseLoaded extends ExpenseState {
   final int selectedYear;
   final int selectedMonth;
   final bool isCurrentMonth;
+  final Map<String, double> categoryLimits;
+
   /// Total spent in the month before the selected month, used as the
   /// baseline for the compact delta ticker next to the total.
   final double previousMonthTotal;
@@ -64,6 +67,7 @@ final class ExpenseLoaded extends ExpenseState {
     selectedYear,
     selectedMonth,
     isCurrentMonth,
+    categoryLimits,
     previousMonthTotal,
     lastExportDate,
     monthDirection,

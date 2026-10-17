@@ -38,6 +38,32 @@ class FakeExpenseRepository implements ExpenseRepository {
   @override
   Future<void> setLastExportDate(DateTime date) async {}
   @override
+  Future<DateTime?> getLastSnapshotDate() async => null;
+  @override
+  Future<void> setLastSnapshotDate(DateTime date) async {}
+  @override
+  Future<double?> getCategoryLimit(
+    String categoryId,
+    int year,
+    int month,
+  ) async => null;
+  @override
+  Future<Map<String, double>> getCategoryLimits(int year, int month) async =>
+      {};
+  @override
+  Future<void> setCategoryLimit(
+    String categoryId,
+    int year,
+    int month,
+    double limit,
+  ) async {}
+  @override
+  Future<void> unsetCategoryLimit(
+    String categoryId,
+    int year,
+    int month,
+  ) async {}
+  @override
   Future<void> updateCategory(ExpenseCategory category) async {}
   @override
   Future<void> deleteCategory(String categoryId) async {}
@@ -49,15 +75,18 @@ void main() {
   group('ImportService CSV', () {
     test('imports rows and matches categories by name', () async {
       final repo = FakeExpenseRepository()
-        ..categories.add(ExpenseCategory(
-          id: 'food',
-          label: 'Food',
-          iconCodePoint: 0,
-          colorValue: 0,
-        ));
+        ..categories.add(
+          ExpenseCategory(
+            id: 'food',
+            label: 'Food',
+            iconCodePoint: 0,
+            colorValue: 0,
+          ),
+        );
       final service = ImportService(repo);
 
-      const csv = 'Date,Category,Amount,Note\n'
+      const csv =
+          'Date,Category,Amount,Note\n'
           '2025-04-10,Food,120.50,Lunch\n'
           '2025-04-12,Food,80,Snack\n';
       final result = await service.importCsv(csv);
@@ -75,7 +104,8 @@ void main() {
       final repo = FakeExpenseRepository();
       final service = ImportService(repo);
 
-      const csv = 'Date,Category,Amount,Note\n'
+      const csv =
+          'Date,Category,Amount,Note\n'
           '2025-04-10,Travel,50,Train\n';
       final result = await service.importCsv(csv);
 
@@ -90,7 +120,8 @@ void main() {
       final repo = FakeExpenseRepository();
       final service = ImportService(repo);
 
-      const csv = 'Date,Category,Amount,Note\n'
+      const csv =
+          'Date,Category,Amount,Note\n'
           'not-a-date,Food,10,x\n'
           '2025-04-10,Food,abc,x\n'
           '2025-04-10,Food,30,ok\n';
@@ -104,15 +135,18 @@ void main() {
   group('ImportService JSON', () {
     test('imports objects and matches categories', () async {
       final repo = FakeExpenseRepository()
-        ..categories.add(ExpenseCategory(
-          id: 'other',
-          label: 'Other',
-          iconCodePoint: 0,
-          colorValue: 0,
-        ));
+        ..categories.add(
+          ExpenseCategory(
+            id: 'other',
+            label: 'Other',
+            iconCodePoint: 0,
+            colorValue: 0,
+          ),
+        );
       final service = ImportService(repo);
 
-      const json = '['
+      const json =
+          '['
           '{"date":"2025-04-10","category":"Other","amount":99.00,"note":"misc"},'
           '{"date":"2025-04-11","category":"Other","amount":12.5,"note":null}'
           ']';
@@ -130,7 +164,8 @@ void main() {
       final repo = FakeExpenseRepository();
       final service = ImportService(repo);
 
-      const json = '['
+      const json =
+          '['
           '{"date":"2025-04-10","category":"Subscriptions","amount":9.99},'
           '{"category":"X","amount":5},'
           '{"date":"bad","category":"X","amount":5}'

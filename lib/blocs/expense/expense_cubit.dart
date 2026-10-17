@@ -27,7 +27,11 @@ class ExpenseCubit extends Cubit<ExpenseState> {
         _selectedMonth,
       );
       final categories = await repository.getCategories();
-      final lastExport = await repository.getLastExportDate();
+      final categoryLimits = await repository.getCategoryLimits(
+        _selectedYear,
+        _selectedMonth,
+      );
+      final lastExport = await repository.getLastSnapshotDate();
 
       // Month-over-month ticker: total of the month before the selection.
       int prevYear = _selectedYear, prevMonth = _selectedMonth - 1;
@@ -35,10 +39,18 @@ class ExpenseCubit extends Cubit<ExpenseState> {
         prevYear--;
         prevMonth = 12;
       }
-      final previousMonthTotal =
-          await repository.getTotalForMonth(prevYear, prevMonth);
+      final previousMonthTotal = await repository.getTotalForMonth(
+        prevYear,
+        prevMonth,
+      );
 
-      _emitLoaded(expenses, categories, lastExport, previousMonthTotal);
+      _emitLoaded(
+        expenses,
+        categories,
+        categoryLimits,
+        lastExport,
+        previousMonthTotal,
+      );
     } catch (e) {
       emit(ExpenseError(e.toString()));
     }
@@ -75,7 +87,8 @@ class ExpenseCubit extends Cubit<ExpenseState> {
 
   /// Jump to a specific month/year (from month picker).
   Future<void> changeMonth(int year, int month) async {
-    _lastDirection = year > _selectedYear ||
+    _lastDirection =
+        year > _selectedYear ||
             (year == _selectedYear && month > _selectedMonth)
         ? MonthDirection.forward
         : MonthDirection.backward;
@@ -137,11 +150,23 @@ class ExpenseCubit extends Cubit<ExpenseState> {
     await loadExpenses();
   }
 
+  Future<void> setCategoryLimit(String categoryId, double limit) async {
+    final now = DateTime.now();
+    await repository.setCategoryLimit(categoryId, now.year, now.month, limit);
+    await loadExpenses();
+  }
+
+  Future<void> unsetCategoryLimit(String categoryId) async {
+    final now = DateTime.now();
+    await repository.unsetCategoryLimit(categoryId, now.year, now.month);
+    await loadExpenses();
+  }
+
   /// Refresh the last export date indicator without reloading expenses.
   Future<void> refreshExportDate() async {
     if (state is ExpenseLoaded) {
       final current = state as ExpenseLoaded;
-      final lastExport = await repository.getLastExportDate();
+      final lastExport = await repository.getLastSnapshotDate();
       emit(
         ExpenseLoaded(
           expenses: current.expenses,
@@ -151,6 +176,7 @@ class ExpenseCubit extends Cubit<ExpenseState> {
           selectedYear: current.selectedYear,
           selectedMonth: current.selectedMonth,
           isCurrentMonth: current.isCurrentMonth,
+          categoryLimits: current.categoryLimits,
           previousMonthTotal: current.previousMonthTotal,
           lastExportDate: lastExport,
         ),
@@ -162,6 +188,7 @@ class ExpenseCubit extends Cubit<ExpenseState> {
   void _emitLoaded(
     List<Expense> expenses,
     List<ExpenseCategory> categories,
+    Map<String, double> categoryLimits,
     DateTime? lastExport,
     double previousMonthTotal,
   ) {
@@ -189,6 +216,7 @@ class ExpenseCubit extends Cubit<ExpenseState> {
         selectedYear: _selectedYear,
         selectedMonth: _selectedMonth,
         isCurrentMonth: isCurrentMonth,
+        categoryLimits: categoryLimits,
         previousMonthTotal: previousMonthTotal,
         lastExportDate: lastExport,
         monthDirection: direction,

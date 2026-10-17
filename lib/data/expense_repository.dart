@@ -2,8 +2,10 @@ import 'package:hive/hive.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/category.dart';
+import '../models/category_limit_change.dart';
 import '../models/date_range.dart';
 import '../models/expense.dart';
+import '../analysis/category_limit_resolver.dart';
 
 /// Abstract repository interface — Cubit depends on this, not the concrete
 /// Hive implementation (Dependency Inversion, §14).
@@ -17,6 +19,17 @@ abstract class ExpenseRepository {
   Future<List<Expense>> getAllExpenses();
   Future<DateTime?> getLastExportDate();
   Future<void> setLastExportDate(DateTime date);
+  Future<DateTime?> getLastSnapshotDate();
+  Future<void> setLastSnapshotDate(DateTime date);
+  Future<double?> getCategoryLimit(String categoryId, int year, int month);
+  Future<Map<String, double>> getCategoryLimits(int year, int month);
+  Future<void> setCategoryLimit(
+    String categoryId,
+    int year,
+    int month,
+    double limit,
+  );
+  Future<void> unsetCategoryLimit(String categoryId, int year, int month);
   Future<List<ExpenseCategory>> getCategories();
   Future<void> addCategory(ExpenseCategory category);
   Future<void> updateCategory(ExpenseCategory category);
@@ -26,11 +39,13 @@ abstract class ExpenseRepository {
 
 /// Hive-backed implementation of [ExpenseRepository].
 class HiveExpenseRepository implements ExpenseRepository {
-  HiveExpenseRepository(this._expenseBox, this._categoryBox);
+  HiveExpenseRepository(this._expenseBox, this._categoryBox, this._limitBox);
 
   final Box<Expense> _expenseBox;
   final Box<ExpenseCategory> _categoryBox;
+  final Box<CategoryLimitChange> _limitBox;
   static const _lastExportKey = 'last_export_date';
+  static const _lastSnapshotKey = 'last_auto_snapshot_date';
 
   @override
   Future<List<Expense>> getExpensesForMonth(int year, int month) async {
@@ -92,6 +107,88 @@ class HiveExpenseRepository implements ExpenseRepository {
   }
 
   @override
+  Future<DateTime?> getLastSnapshotDate() async {
+    final prefs = await SharedPreferences.getInstance();
+    final millis = prefs.getInt(_lastSnapshotKey);
+    return millis != null ? DateTime.fromMillisecondsSinceEpoch(millis) : null;
+  }
+
+  @override
+  Future<void> setLastSnapshotDate(DateTime date) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt(_lastSnapshotKey, date.millisecondsSinceEpoch);
+  }
+
+  @override
+  Future<double?> getCategoryLimit(
+    String categoryId,
+    int year,
+    int month,
+  ) async {
+    return CategoryLimitResolver.resolve(
+      _limitBox.values,
+      categoryId,
+      year,
+      month,
+    );
+  }
+
+  @override
+  Future<Map<String, double>> getCategoryLimits(int year, int month) async {
+    return CategoryLimitResolver.resolveAll(_limitBox.values, year, month);
+  }
+
+  @override
+  Future<void> setCategoryLimit(
+    String categoryId,
+    int year,
+    int month,
+    double limit,
+  ) async {
+    if (limit <= 0) {
+      throw ArgumentError.value(limit, 'limit', 'must be greater than zero');
+    }
+    final key = _limitKey(categoryId, year, month);
+    await _limitBox.put(
+      key,
+      CategoryLimitChange(
+        categoryId: categoryId,
+        effectiveYear: year,
+        effectiveMonth: month,
+        limit: limit,
+      ),
+    );
+    await _limitBox.flush();
+    final saved = _limitBox.get(key);
+    if (saved?.limit != limit) {
+      throw StateError('Category limit could not be verified after saving');
+    }
+  }
+
+  @override
+  Future<void> unsetCategoryLimit(
+    String categoryId,
+    int year,
+    int month,
+  ) async {
+    final key = _limitKey(categoryId, year, month);
+    await _limitBox.put(
+      key,
+      CategoryLimitChange(
+        categoryId: categoryId,
+        effectiveYear: year,
+        effectiveMonth: month,
+        limit: null,
+      ),
+    );
+    await _limitBox.flush();
+    final saved = _limitBox.get(key);
+    if (saved == null || saved.limit != null) {
+      throw StateError('Category limit removal could not be verified');
+    }
+  }
+
+  @override
   Future<List<ExpenseCategory>> getCategories() async {
     return _categoryBox.values.toList();
   }
@@ -126,7 +223,15 @@ class HiveExpenseRepository implements ExpenseRepository {
       }
     }
     await _categoryBox.delete(categoryId);
+    final limitKeys = _limitBox.keys.where((key) {
+      final change = _limitBox.get(key);
+      return change?.categoryId == categoryId;
+    }).toList();
+    await _limitBox.deleteAll(limitKeys);
   }
+
+  static String _limitKey(String categoryId, int year, int month) =>
+      '$categoryId|$year|$month';
 
   @override
   Future<void> initDefaultCategories(List<ExpenseCategory> defaults) async {

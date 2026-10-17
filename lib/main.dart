@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -9,7 +11,9 @@ import 'blocs/onboarding/onboarding_cubit.dart';
 import 'blocs/theme/theme_cubit.dart';
 import 'constants/categories.dart';
 import 'data/expense_repository.dart';
+import 'export/auto_snapshot_service.dart';
 import 'models/category.dart';
+import 'models/category_limit_change.dart';
 import 'models/expense.dart';
 import 'screens/home_screen.dart';
 import 'screens/onboarding_screen.dart';
@@ -25,29 +29,19 @@ void main() async {
   await Hive.initFlutter();
   Hive.registerAdapter(ExpenseCategoryAdapter());
   Hive.registerAdapter(ExpenseAdapter());
+  Hive.registerAdapter(CategoryLimitChangeAdapter());
 
-  Box<Expense> expenseBox;
-  try {
-    expenseBox = await Hive.openBox<Expense>('expenses');
-  } catch (e) {
-    // If old enum data causes parsing errors, wipe and start fresh
-    await Hive.deleteBoxFromDisk('expenses');
-    expenseBox = await Hive.openBox<Expense>('expenses');
-  }
-
-  Box<ExpenseCategory> categoryBox;
-  try {
-    categoryBox = await Hive.openBox<ExpenseCategory>('categories');
-  } catch (e) {
-    await Hive.deleteBoxFromDisk('categories');
-    categoryBox = await Hive.openBox<ExpenseCategory>('categories');
-  }
+  final expenseBox = await Hive.openBox<Expense>('expenses');
+  final categoryBox = await Hive.openBox<ExpenseCategory>('categories');
+  final limitBox = await Hive.openBox<CategoryLimitChange>(
+    'category_limit_changes',
+  );
 
   // Open settings box for theme persistence
   final settingsBox = await ThemeCubit.openSettingsBox();
 
   // Wire concrete implementation (DI, §14)
-  final repository = HiveExpenseRepository(expenseBox, categoryBox);
+  final repository = HiveExpenseRepository(expenseBox, categoryBox, limitBox);
 
   // Seed default categories on first run
   await repository.initDefaultCategories(defaultCategories);
@@ -56,11 +50,26 @@ void main() async {
   final prefs = await SharedPreferences.getInstance();
   final hasOnboarded = prefs.getBool('has_onboarded') ?? false;
 
-  runApp(PebbleApp(
-    repository: repository,
-    themeCubit: ThemeCubit(settingsBox),
-    hasOnboarded: hasOnboarded,
-  ));
+  final snapshotService = AutoSnapshotService(repository);
+  runApp(
+    PebbleApp(
+      repository: repository,
+      themeCubit: ThemeCubit(settingsBox),
+      hasOnboarded: hasOnboarded,
+    ),
+  );
+
+  // Storage plugins must not run while Flutter is submitting its first frame.
+  // The snapshot is non-critical, so run it after the app is rendered.
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    unawaited(() async {
+      try {
+        await snapshotService.createIfDue();
+      } catch (error) {
+        debugPrint('Automatic snapshot failed: $error');
+      }
+    }());
+  });
 }
 
 class PebbleApp extends StatelessWidget {

@@ -50,8 +50,7 @@ class CategoryPieChart extends StatelessWidget {
         orElse: () => categories.first,
       );
       return _PieEntry(category: category, amount: entry.value);
-    }).toList()
-      ..sort((a, b) => b.amount.compareTo(a.amount));
+    }).toList()..sort((a, b) => b.amount.compareTo(a.amount));
 
     if (entries.isEmpty || total <= 0) return const SizedBox.shrink();
 
@@ -60,8 +59,9 @@ class CategoryPieChart extends StatelessWidget {
     // When [showAll] is set (analysis page) every category is drawn.
     final visibleEntries = showAll ? entries : entries.take(5).toList();
     if (!showAll) {
-      final overflow =
-          entries.skip(5).fold<double>(0, (sum, e) => sum + e.amount);
+      final overflow = entries
+          .skip(5)
+          .fold<double>(0, (sum, e) => sum + e.amount);
       if (overflow > 0) {
         final existing = visibleEntries.firstWhere(
           (e) => e.category.id == kOtherCategoryId,
@@ -232,10 +232,7 @@ class CategoryPieChart extends StatelessWidget {
           Container(
             width: 10,
             height: 10,
-            decoration: BoxDecoration(
-              color: color,
-              shape: BoxShape.circle,
-            ),
+            decoration: BoxDecoration(color: color, shape: BoxShape.circle),
           ),
           const SizedBox(width: AppSpacing.s),
           Expanded(

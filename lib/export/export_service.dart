@@ -1,8 +1,9 @@
 import 'dart:io';
 
+import 'dart:convert';
+import 'package:file_picker/file_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:share_plus/share_plus.dart';
 
 import '../data/expense_repository.dart';
 import '../models/category.dart';
@@ -79,24 +80,77 @@ class JsonExportFormatter implements ExportFormatter {
   }
 }
 
-/// Writes an export file and shares it via the native share sheet.
-/// Never touches UI — only formats, writes, and shares (SRP, §14).
+/// Saves a manually requested file using the platform's normal file-save
+/// implementation. The picker opens in Downloads by default, while the user
+/// can navigate to any other permitted location.
+Future<String?> saveToStorage({
+  required String content,
+  required String fileName,
+  required String extension,
+}) async {
+  final bytes = utf8.encode(content);
+  final path = await FilePicker.saveFile(
+    dialogTitle: 'Save $extension file',
+    fileName: fileName,
+    initialDirectory: Platform.isAndroid
+        ? '/storage/emulated/0/Download'
+        : null,
+    type: FileType.custom,
+    allowedExtensions: [extension],
+    bytes: bytes,
+  );
+  if (path == null) return null;
+
+  // Android's Storage Access Framework returns a document-provider path,
+  // not a filesystem path that dart:io can open. The plugin has already
+  // written the bytes through the provider, so do not write it again.
+  if (Platform.isAndroid) return path;
+
+  // Some desktop platforms return the selected path without writing bytes.
+  final file = File(path);
+  if (!await file.exists() || await file.length() == 0) {
+    await file.writeAsBytes(bytes, flush: true);
+  }
+  return path;
+}
+
+/// Resolves the private app storage folder used by automatic snapshots.
+Future<Directory> resolveSnapshotDirectory() async {
+  final base = Platform.isAndroid
+      ? (await getExternalStorageDirectory()) ??
+            await getApplicationDocumentsDirectory()
+      : await getApplicationDocumentsDirectory();
+  final directory = Directory('${base.path}${Platform.pathSeparator}Pebble');
+  if (!await directory.exists()) {
+    await directory.create(recursive: true);
+  }
+  return directory;
+}
+
+/// Writes manual exports to app file storage.
 class ExportService {
   ExportService(this._repository);
 
   final ExpenseRepository _repository;
 
-  Future<void> export(ExportFormatter formatter) async {
+  /// Returns the path the user saved to, or `null` if cancelled.
+  Future<String?> export(ExportFormatter formatter) async {
     final expenses = await _repository.getAllExpenses();
     final categories = await _repository.getCategories();
     final content = formatter.formatToString(expenses, categories);
-    final dir = await getApplicationDocumentsDirectory();
+
     final timestamp = DateFormat('yyyyMMdd_HHmmss').format(DateTime.now());
-    final file = File(
-      '${dir.path}/pebble_export_$timestamp.${formatter.fileExtension}',
+    final fileName = 'pebble_export_$timestamp.${formatter.fileExtension}';
+
+    final path = await saveToStorage(
+      content: content,
+      fileName: fileName,
+      extension: formatter.fileExtension,
     );
-    await file.writeAsString(content);
-    await _repository.setLastExportDate(DateTime.now());
-    await Share.shareXFiles([XFile(file.path)]);
+
+    if (path != null) {
+      await _repository.setLastExportDate(DateTime.now());
+    }
+    return path;
   }
 }

@@ -5,11 +5,13 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../blocs/expense/expense_cubit.dart';
 import '../blocs/expense/expense_state.dart';
 import '../models/expense.dart';
+import '../models/category.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_text_styles.dart';
 import '../widgets/expense_entry_sheet.dart';
 import '../widgets/expense_list.dart';
+import '../widgets/budget_details_sheet.dart';
 import '../widgets/month_header.dart';
 import '../widgets/month_picker_sheet.dart';
 import '../widgets/total_summary_card.dart';
@@ -101,6 +103,25 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  void _openBudgetDetails(
+    BuildContext context,
+    ExpenseCategory category,
+    double spent,
+    double limit,
+  ) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppColors.of(context).surfaceBase,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(AppSpacing.radiusCard),
+        ),
+      ),
+      builder: (_) =>
+          BudgetDetailsSheet(category: category, spent: spent, limit: limit),
+    );
+  }
+
   void _openSettings(BuildContext context) {
     Navigator.of(
       context,
@@ -137,14 +158,14 @@ class _HomeScreenState extends State<HomeScreen> {
             onPressed: () => _openAnalysis(context),
             icon: const Icon(Icons.bar_chart_rounded),
             iconSize: 22,
-            color: colors.textPrimary,
+            color: colors.textSecondary,
             visualDensity: VisualDensity.compact,
           ),
           IconButton(
             onPressed: () => _openSettings(context),
             icon: const Icon(Icons.tune_rounded),
             iconSize: 22,
-            color: colors.textPrimary,
+            color: colors.textSecondary,
             visualDensity: VisualDensity.compact,
           ),
           const SizedBox(width: 4),
@@ -160,19 +181,17 @@ class _HomeScreenState extends State<HomeScreen> {
             }
             if (state is ExpenseError) {
               return Center(
-                child: Text(
-                  'Error: ${state.message}',
-                  style: styles.cardLabel,
-                ),
+                child: Text('Error: ${state.message}', style: styles.cardLabel),
               );
             }
             final loaded = state as ExpenseLoaded;
 
             // Determine slide direction for animation
             final isForward = loaded.monthDirection == MonthDirection.forward;
-            final isBackward =
-                loaded.monthDirection == MonthDirection.backward;
-            final key = ValueKey('${loaded.selectedYear}-${loaded.selectedMonth}');
+            final isBackward = loaded.monthDirection == MonthDirection.backward;
+            final key = ValueKey(
+              '${loaded.selectedYear}-${loaded.selectedMonth}',
+            );
 
             return GestureDetector(
               onHorizontalDragEnd: (details) {
@@ -194,11 +213,9 @@ class _HomeScreenState extends State<HomeScreen> {
                         year: loaded.selectedYear,
                         month: loaded.selectedMonth,
                         hasNext: !loaded.isCurrentMonth,
-                        onPrevious: () => context
-                            .read<ExpenseCubit>()
-                            .previousMonth(),
-                        onNext: () =>
-                            context.read<ExpenseCubit>().nextMonth(),
+                        onPrevious: () =>
+                            context.read<ExpenseCubit>().previousMonth(),
+                        onNext: () => context.read<ExpenseCubit>().nextMonth(),
                         onCalendarTap: () => _openMonthPicker(
                           context,
                           loaded.selectedYear,
@@ -234,15 +251,13 @@ class _HomeScreenState extends State<HomeScreen> {
                           begin: Offset(begin, 0.0),
                           end: Offset.zero,
                         ).animate(animation);
-                        final fadeTween = Tween<double>(
-                          begin: 0.0,
-                          end: 1.0,
-                        ).animate(
-                          CurvedAnimation(
-                            parent: animation,
-                            curve: const Interval(0.3, 1.0),
-                          ),
-                        );
+                        final fadeTween = Tween<double>(begin: 0.0, end: 1.0)
+                            .animate(
+                              CurvedAnimation(
+                                parent: animation,
+                                curve: const Interval(0.3, 1.0),
+                              ),
+                            );
                         return SlideTransition(
                           position: slideTween,
                           child: FadeTransition(
@@ -257,8 +272,9 @@ class _HomeScreenState extends State<HomeScreen> {
                           slivers: [
                             SliverToBoxAdapter(
                               child: Padding(
-                                padding:
-                                    const EdgeInsets.symmetric(horizontal: 12),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                ),
                                 child: Column(
                                   children: [
                                     // Total summary card with category breakdown
@@ -269,6 +285,14 @@ class _HomeScreenState extends State<HomeScreen> {
                                       categoryBreakdown:
                                           loaded.categoryBreakdown,
                                       categories: loaded.categories,
+                                      categoryLimits: loaded.categoryLimits,
+                                      onBudgetTap: (category, spent, limit) =>
+                                          _openBudgetDetails(
+                                            context,
+                                            category,
+                                            spent,
+                                            limit,
+                                          ),
                                       lastExportDate: loaded.lastExportDate,
                                       obscured: _obscured,
                                       onToggleObscured: _toggleObscured,
@@ -289,7 +313,9 @@ class _HomeScreenState extends State<HomeScreen> {
                                     ),
 
                                     // Bottom clearance for FAB (height + 24)
-                                    const SizedBox(height: AppSpacing.fabClearance),
+                                    const SizedBox(
+                                      height: AppSpacing.fabClearance,
+                                    ),
                                   ],
                                 ),
                               ),

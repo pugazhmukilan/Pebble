@@ -8,7 +8,9 @@ import '../blocs/expense/expense_cubit.dart';
 import '../blocs/theme/theme_cubit.dart';
 import '../data/expense_repository.dart';
 import '../export/export_service.dart';
+import '../export/sample_export_service.dart';
 import '../import/import_service.dart';
+import 'category_limits_screen.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_text_styles.dart';
 
@@ -21,10 +23,10 @@ class SettingsScreen extends StatelessWidget {
     final repository = context.read<ExpenseRepository>();
     final exportService = ExportService(repository);
     try {
-      await exportService.export(formatter);
-      if (context.mounted) {
-        context.read<ExpenseCubit>().refreshExportDate();
-      }
+      final path = await exportService.export(formatter);
+      if (!context.mounted || path == null) return;
+      context.read<ExpenseCubit>().refreshExportDate();
+      _showDownloadSuccess(context);
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(
@@ -62,13 +64,13 @@ class SettingsScreen extends StatelessWidget {
       final message = res.hasError
           ? 'Import failed: ${res.error}'
           : 'Imported ${res.importedExpenses} '
-              'expense${res.importedExpenses == 1 ? '' : 's'}'
-              '${res.createdCategories > 0 ? ', ${res.createdCategories} new '
-                  'categor${res.createdCategories == 1 ? 'y' : 'ies'}' : ''}'
-              '${res.skipped > 0 ? ', ${res.skipped} skipped' : ''}.';
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(message)),
-      );
+                'expense${res.importedExpenses == 1 ? '' : 's'}'
+                '${res.createdCategories > 0 ? ', ${res.createdCategories} new '
+                          'categor${res.createdCategories == 1 ? 'y' : 'ies'}' : ''}'
+                '${res.skipped > 0 ? ', ${res.skipped} skipped' : ''}.';
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(message)));
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(
@@ -76,6 +78,43 @@ class SettingsScreen extends StatelessWidget {
         ).showSnackBar(SnackBar(content: Text('Import failed: $e')));
       }
     }
+  }
+
+  Future<void> _downloadSample(BuildContext context, bool isJson) async {
+    try {
+      final path = isJson
+          ? await const SampleExportService().saveSampleJson()
+          : await const SampleExportService().saveSampleCsv();
+      if (context.mounted && path != null) {
+        _showDownloadSuccess(context);
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Could not save sample: $e')));
+      }
+    }
+  }
+
+  void _showDownloadSuccess(BuildContext context) {
+    final colors = AppColors.of(context);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        backgroundColor: colors.signalIncome,
+        content: const Row(
+          children: [
+            Icon(Icons.check_circle_rounded, color: Colors.white),
+            SizedBox(width: 8),
+            Text(
+              'Downloaded successfully',
+              style: TextStyle(color: Colors.white),
+            ),
+          ],
+        ),
+        duration: const Duration(seconds: 4),
+      ),
+    );
   }
 
   @override
@@ -132,48 +171,110 @@ class SettingsScreen extends StatelessWidget {
               ],
             ),
           ),
+
+          const SizedBox(height: 28),
+          Text('SPENDING LIMITS', style: styles.sectionLabel),
+          const SizedBox(height: 8),
+          _ExportTile(
+            icon: Icons.speed_rounded,
+            title: 'Category limits',
+            subtitle: 'Set monthly spending limits for your categories',
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const CategoryLimitsScreen()),
+            ),
+          ),
+
+          // ── BACKUP DATA ─────────────────────────────────────────────────
           const SizedBox(height: 28),
           Text('BACKUP DATA', style: styles.sectionLabel),
           const SizedBox(height: 8),
-          _ExportTile(
-            icon: Icons.table_chart_rounded,
-            title: 'Export as CSV',
-            subtitle: 'All expenses, opens in any spreadsheet app',
-            onTap: () => _export(context, CsvExportFormatter()),
+          // CSV and JSON export in a single row
+          Row(
+            children: [
+              Expanded(
+                child: _CompactActionTile(
+                  icon: Icons.table_chart_rounded,
+                  label: 'CSV',
+                  description: 'Save backup',
+                  onTap: () => _export(context, CsvExportFormatter()),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: _CompactActionTile(
+                  icon: Icons.data_object_rounded,
+                  label: 'JSON',
+                  description: 'Save backup',
+                  onTap: () => _export(context, JsonExportFormatter()),
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 12),
-          _ExportTile(
-            icon: Icons.data_object_rounded,
-            title: 'Export as JSON',
-            subtitle: 'All expenses, machine-readable format',
-            onTap: () => _export(context, JsonExportFormatter()),
-          ),
+
+          // ── IMPORT DATA ─────────────────────────────────────────────────
           const SizedBox(height: 28),
           Text('IMPORT DATA', style: styles.sectionLabel),
           const SizedBox(height: 8),
-          _ExportTile(
-            icon: Icons.upload_rounded,
-            title: 'Import from CSV',
-            subtitle: 'Restore expenses from a Pebble CSV export',
-            onTap: () => _pickAndImport(context, 'csv', false),
+          // CSV and JSON import in a single row
+          Row(
+            children: [
+              Expanded(
+                child: _CompactActionTile(
+                  icon: Icons.upload_file_rounded,
+                  label: 'CSV',
+                  description: 'Open file',
+                  onTap: () => _pickAndImport(context, 'csv', false),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: _CompactActionTile(
+                  icon: Icons.upload_file_rounded,
+                  label: 'JSON',
+                  description: 'Open file',
+                  onTap: () => _pickAndImport(context, 'json', true),
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 12),
-          _ExportTile(
-            icon: Icons.upload_rounded,
-            title: 'Import from JSON',
-            subtitle: 'Restore expenses from a Pebble JSON export',
-            onTap: () => _pickAndImport(context, 'json', true),
-          ),
-          const SizedBox(height: 12),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 4),
-            child: Text(
-              'Import reads the exact format produced by export '
-              '(Date, Category, Amount, Note). Category names are matched to '
-              'your existing categories — unknown ones are created automatically.',
-              style: styles.caption,
+
+          // ── SAMPLE FORMAT ────────────────────────────────────────────────
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            decoration: BoxDecoration(
+              color: colors.surfaceRaised,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: colors.borderHairline, width: 0.5),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.help_outline_rounded,
+                  size: 18,
+                  color: colors.textTertiary,
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    'Not sure about the format? Download a sample file to use as a template.',
+                    style: styles.body,
+                  ),
+                ),
+                const SizedBox(width: 10),
+                _SampleButton(
+                  label: 'CSV',
+                  onTap: () => _downloadSample(context, false),
+                ),
+                const SizedBox(width: 6),
+                _SampleButton(
+                  label: 'JSON',
+                  onTap: () => _downloadSample(context, true),
+                ),
+              ],
             ),
           ),
+
           const SizedBox(height: 28),
           Text('ABOUT', style: styles.sectionLabel),
           const SizedBox(height: 8),
@@ -204,6 +305,8 @@ class SettingsScreen extends StatelessWidget {
     );
   }
 }
+
+// ── Appearance tile (unchanged) ──────────────────────────────────────────────
 
 /// Radio-style tile for choosing a theme mode.
 class _AppearanceTile extends StatelessWidget {
@@ -240,9 +343,7 @@ class _AppearanceTile extends StatelessWidget {
               color: isSelected ? colors.textPrimary : colors.textSecondary,
             ),
             const SizedBox(width: 12),
-            Expanded(
-              child: Text(label, style: styles.listRowTitle),
-            ),
+            Expanded(child: Text(label, style: styles.listRowTitle)),
             Icon(
               isSelected
                   ? Icons.radio_button_checked_rounded
@@ -256,6 +357,8 @@ class _AppearanceTile extends StatelessWidget {
     );
   }
 }
+
+// ── Large tile (category limits) ─────────────────────────────────────────────
 
 class _ExportTile extends StatelessWidget {
   const _ExportTile({
@@ -308,6 +411,86 @@ class _ExportTile extends StatelessWidget {
               ),
             ),
             Icon(Icons.chevron_right_rounded, color: colors.textSecondary),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ── Compact half-width action tile (export/import CSV | JSON row) ─────────────
+
+class _CompactActionTile extends StatelessWidget {
+  const _CompactActionTile({
+    required this.icon,
+    required this.label,
+    required this.description,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String label;
+  final String description;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
+    final styles = AppTextStyles.of(context);
+
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(14),
+      child: Ink(
+        padding: const EdgeInsets.symmetric(vertical: 14),
+        decoration: BoxDecoration(
+          color: colors.surfaceRaised,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: colors.borderHairline, width: 0.5),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 22, color: colors.textPrimary),
+            const SizedBox(height: 6),
+            Text(label, style: styles.listRowTitle.copyWith(fontSize: 14)),
+            const SizedBox(height: 2),
+            Text(description, style: styles.caption),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ── Inline "Download sample" button ─────────────────────────────────────────
+
+class _SampleButton extends StatelessWidget {
+  const _SampleButton({required this.label, required this.onTap});
+
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
+    final styles = AppTextStyles.of(context);
+
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        decoration: BoxDecoration(
+          color: colors.textPrimary.withValues(alpha: 0.07),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: colors.borderHairline, width: 0.5),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.download_rounded, size: 14, color: colors.textSecondary),
+            const SizedBox(width: 4),
+            Text(label, style: styles.caption),
           ],
         ),
       ),

@@ -124,7 +124,7 @@ Switch appearance, export your data as CSV or JSON, and import it back whenever 
 | State management | `flutter_bloc` (BLoC / Cubit) |
 | Local storage | `hive` + `hive_flutter` |
 | Charts | `fl_chart` |
-| Export / Import | `share_plus`, `file_picker`, `path_provider` |
+| Export / Import | `file_picker` for import, `path_provider` for app file storage |
 | Theme persistence | `shared_preferences` |
 
 Architected around SOLID principles: immutable states, a swappable `ExpenseRepository`, and small, composable widgets. No over-engineering — just clean, testable code.

@@ -4,8 +4,9 @@ import 'package:intl/intl.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_text_styles.dart';
 
-/// Month label with chevrons for prev/next and calendar icon
-/// to open month picker sheet (§6 item 1).
+/// Month label with chevrons for prev/next.
+///
+/// Tapping the month label opens the month picker sheet.
 class MonthHeader extends StatelessWidget {
   const MonthHeader({
     super.key,
@@ -39,35 +40,33 @@ class MonthHeader extends StatelessWidget {
           IconButton(
             onPressed: onPrevious,
             icon: const Icon(Icons.chevron_left_rounded),
-            iconSize: 22,
+            iconSize: 18,
             visualDensity: VisualDensity.compact,
             padding: EdgeInsets.zero,
             constraints: const BoxConstraints(),
             color: colors.textSecondary,
           ),
           const SizedBox(width: 6),
-          Text(
-            label,
-            style: styles.screenTitle,
-          ),
-          const SizedBox(width: 2),
           GestureDetector(
             onTap: onCalendarTap,
-            child: Icon(
-              Icons.calendar_month_rounded,
-              size: 18,
-              color: colors.textSecondary,
+            child: Text(
+              label,
+              style: styles.screenTitle.copyWith(
+                fontSize: 16,
+                color: colors.textSecondary,
+              ),
             ),
           ),
           const SizedBox(width: 6),
           IconButton(
             onPressed: hasNext ? onNext : null,
             icon: const Icon(Icons.chevron_right_rounded),
-            iconSize: 22,
+            iconSize: 18,
             visualDensity: VisualDensity.compact,
             padding: EdgeInsets.zero,
             constraints: const BoxConstraints(),
-            color: hasNext ? colors.textSecondary : colors.borderHairline,
+            color: colors.textSecondary,
+            disabledColor: colors.textSecondary,
           ),
         ],
       ),

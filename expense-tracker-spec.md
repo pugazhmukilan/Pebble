@@ -147,12 +147,13 @@ Contents, top to bottom:
 
 ---
 
-## 8. Current-month-only edit/delete rule
+## 8. Historical expense editing rule
 
-This is a deliberate constraint, not a limitation to work around:
-- Once a month is no longer the current calendar month, its entries become **read-only** in the UI — no edit sheet opens, no delete swipe/long-press action fires, when viewing an archived month.
-- Rationale: keeps the mental model simple (this month is "live," everything before is settled history) and avoids retroactively changing totals for months you've already mentally closed out or already exported/backed up.
-- Implementation detail: gate the tap-to-edit and swipe/long-press-to-delete handlers in `expense_list.dart` on `isCurrentMonth(selectedMonth)` — if false, the row is display-only.
+Expense entries remain editable even after a month is no longer the current month. This is a deliberate exception to the current-month-only rule for category limits and month summary data:
+- Past expense entries can be edited or deleted from the UI at any time.
+- Category limits remain current-month-only and do not retroactively rewrite historical months.
+- This keeps historical expense tracking accurate without letting a user change the bookkeeping assumptions for prior months' limit settings.
+- Implementation detail: the expense row edit/delete handlers in `expense_list.dart` stay enabled for archived months; the limit UI and limits logic remain tied to the current month only.
 
 ---
 

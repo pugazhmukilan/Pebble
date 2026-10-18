@@ -12,6 +12,7 @@ import '../export/sample_export_service.dart';
 import '../import/import_service.dart';
 import 'category_limits_screen.dart';
 import '../theme/app_colors.dart';
+import '../theme/app_spacing.dart';
 import '../theme/app_text_styles.dart';
 
 /// Settings screen — export options and appearance (theme) live here,
@@ -130,173 +131,110 @@ class SettingsScreen extends StatelessWidget {
         centerTitle: true,
       ),
       body: ListView(
-        padding: const EdgeInsets.fromLTRB(12, 8, 12, 32),
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.screenMargin,
+          12,
+          AppSpacing.screenMargin,
+          32,
+        ),
         children: [
-          Text('APPEARANCE', style: styles.sectionLabel),
-          const SizedBox(height: 8),
-          Container(
-            decoration: BoxDecoration(
-              color: colors.surfaceRaised,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: colors.borderHairline, width: 0.5),
+          _SettingsSection(
+            label: 'APPEARANCE',
+            child: _AppearanceSelector(
+              selected: themeMode,
+              onSelected: (mode) => context.read<ThemeCubit>().setMode(mode),
             ),
-            child: Column(
+          ),
+
+          _SettingsSection(
+            label: 'SPENDING LIMITS',
+            child: _SettingsGroup(
               children: [
-                _AppearanceTile(
-                  label: 'System',
-                  icon: Icons.brightness_auto_rounded,
-                  value: ThemeMode.system,
-                  selected: themeMode,
-                  onSelected: (mode) =>
-                      context.read<ThemeCubit>().setMode(mode),
-                ),
-                const Divider(height: 1),
-                _AppearanceTile(
-                  label: 'Light',
-                  icon: Icons.light_mode_rounded,
-                  value: ThemeMode.light,
-                  selected: themeMode,
-                  onSelected: (mode) =>
-                      context.read<ThemeCubit>().setMode(mode),
-                ),
-                const Divider(height: 1),
-                _AppearanceTile(
-                  label: 'Dark',
-                  icon: Icons.dark_mode_rounded,
-                  value: ThemeMode.dark,
-                  selected: themeMode,
-                  onSelected: (mode) =>
-                      context.read<ThemeCubit>().setMode(mode),
-                ),
-              ],
-            ),
-          ),
-
-          const SizedBox(height: 28),
-          Text('SPENDING LIMITS', style: styles.sectionLabel),
-          const SizedBox(height: 8),
-          _ExportTile(
-            icon: Icons.speed_rounded,
-            title: 'Category limits',
-            subtitle: 'Set monthly spending limits for your categories',
-            onTap: () => Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const CategoryLimitsScreen()),
-            ),
-          ),
-
-          // ── BACKUP DATA ─────────────────────────────────────────────────
-          const SizedBox(height: 28),
-          Text('BACKUP DATA', style: styles.sectionLabel),
-          const SizedBox(height: 8),
-          // CSV and JSON export in a single row
-          Row(
-            children: [
-              Expanded(
-                child: _CompactActionTile(
-                  icon: Icons.table_chart_rounded,
-                  label: 'CSV',
-                  description: 'Save backup',
-                  onTap: () => _export(context, CsvExportFormatter()),
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: _CompactActionTile(
-                  icon: Icons.data_object_rounded,
-                  label: 'JSON',
-                  description: 'Save backup',
-                  onTap: () => _export(context, JsonExportFormatter()),
-                ),
-              ),
-            ],
-          ),
-
-          // ── IMPORT DATA ─────────────────────────────────────────────────
-          const SizedBox(height: 28),
-          Text('IMPORT DATA', style: styles.sectionLabel),
-          const SizedBox(height: 8),
-          // CSV and JSON import in a single row
-          Row(
-            children: [
-              Expanded(
-                child: _CompactActionTile(
-                  icon: Icons.upload_file_rounded,
-                  label: 'CSV',
-                  description: 'Open file',
-                  onTap: () => _pickAndImport(context, 'csv', false),
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: _CompactActionTile(
-                  icon: Icons.upload_file_rounded,
-                  label: 'JSON',
-                  description: 'Open file',
-                  onTap: () => _pickAndImport(context, 'json', true),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-
-          // ── SAMPLE FORMAT ────────────────────────────────────────────────
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-            decoration: BoxDecoration(
-              color: colors.surfaceRaised,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: colors.borderHairline, width: 0.5),
-            ),
-            child: Row(
-              children: [
-                Icon(
-                  Icons.help_outline_rounded,
-                  size: 18,
-                  color: colors.textTertiary,
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Text(
-                    'Not sure about the format? Download a sample file to use as a template.',
-                    style: styles.body,
+                _SettingsRow(
+                  icon: Icons.speed_rounded,
+                  title: 'Category limits',
+                  subtitle: 'Set monthly spending limits for your categories',
+                  onTap: () => Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => const CategoryLimitsScreen(),
+                    ),
                   ),
                 ),
-                const SizedBox(width: 10),
-                _SampleButton(
-                  label: 'CSV',
-                  onTap: () => _downloadSample(context, false),
+              ],
+            ),
+          ),
+
+          _SettingsSection(
+            label: 'BACKUP DATA',
+            child: _SettingsGroup(
+              children: [
+                _SettingsRow(
+                  icon: Icons.table_chart_rounded,
+                  title: 'Export as CSV',
+                  subtitle: 'Save a spreadsheet backup',
+                  onTap: () => _export(context, CsvExportFormatter()),
                 ),
-                const SizedBox(width: 6),
-                _SampleButton(
-                  label: 'JSON',
-                  onTap: () => _downloadSample(context, true),
+                const Divider(indent: 56, endIndent: 16),
+                _SettingsRow(
+                  icon: Icons.data_object_rounded,
+                  title: 'Export as JSON',
+                  subtitle: 'Save a complete data backup',
+                  onTap: () => _export(context, JsonExportFormatter()),
                 ),
               ],
             ),
           ),
 
-          const SizedBox(height: 28),
-          Text('ABOUT', style: styles.sectionLabel),
-          const SizedBox(height: 8),
-          Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: colors.surfaceRaised,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: colors.borderHairline, width: 0.5),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+          _SettingsSection(
+            label: 'IMPORT DATA',
+            child: _SettingsGroup(
               children: [
-                Text('Pebble', style: styles.listRowTitle),
-                const SizedBox(height: 4),
-                Text(
-                  'Manual-only expense tracking. Private, local, fast entry. '
-                  'Your data never leaves your device.',
-                  style: styles.body,
+                _SettingsRow(
+                  icon: Icons.upload_file_rounded,
+                  title: 'Import CSV',
+                  subtitle: 'Restore from a spreadsheet file',
+                  onTap: () => _pickAndImport(context, 'csv', false),
                 ),
-                const SizedBox(height: 12),
-                Text('Version 0.2.0', style: styles.caption),
+                const Divider(indent: 56, endIndent: 16),
+                _SettingsRow(
+                  icon: Icons.upload_file_rounded,
+                  title: 'Import JSON',
+                  subtitle: 'Restore from a data backup',
+                  onTap: () => _pickAndImport(context, 'json', true),
+                ),
+              ],
+            ),
+          ),
+
+          _SettingsSection(
+            label: 'SAMPLE FORMAT',
+            child: _SampleFormatCard(
+              onCsvTap: () => _downloadSample(context, false),
+              onJsonTap: () => _downloadSample(context, true),
+            ),
+          ),
+
+          _SettingsSection(
+            label: 'ABOUT',
+            child: _SettingsGroup(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 14),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Pebble', style: styles.listRowTitle),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Manual-only expense tracking. Private, local, fast entry. '
+                        'Your data never leaves your device.',
+                        style: styles.body,
+                      ),
+                      const SizedBox(height: 12),
+                      Text('Version 0.2.0', style: styles.caption),
+                    ],
+                  ),
+                ),
               ],
             ),
           ),
@@ -306,131 +244,147 @@ class SettingsScreen extends StatelessWidget {
   }
 }
 
-// ── Appearance tile (unchanged) ──────────────────────────────────────────────
-
-/// Radio-style tile for choosing a theme mode.
-class _AppearanceTile extends StatelessWidget {
-  const _AppearanceTile({
-    required this.label,
-    required this.icon,
-    required this.value,
-    required this.selected,
-    required this.onSelected,
-  });
+class _SettingsSection extends StatelessWidget {
+  const _SettingsSection({required this.label, required this.child});
 
   final String label;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final styles = AppTextStyles.of(context);
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label, style: styles.sectionLabel),
+          const SizedBox(height: 8),
+          child,
+        ],
+      ),
+    );
+  }
+}
+
+class _SettingsGroup extends StatelessWidget {
+  const _SettingsGroup({required this.children});
+
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
+
+    return Container(
+      decoration: BoxDecoration(
+        color: colors.surfaceRaised,
+        borderRadius: BorderRadius.circular(AppSpacing.radiusCard),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Column(children: children),
+    );
+  }
+}
+
+class _SettingsRow extends StatelessWidget {
+  const _SettingsRow({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    this.onTap,
+  });
+
   final IconData icon;
-  final ThemeMode value;
+  final String title;
+  final String subtitle;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
+    final styles = AppTextStyles.of(context);
+    final content = Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      child: Row(
+        children: [
+          Icon(icon, size: 20, color: colors.textSecondary),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title, style: styles.listRowTitle),
+                const SizedBox(height: 3),
+                Text(subtitle, style: styles.body),
+              ],
+            ),
+          ),
+          const SizedBox(width: 12),
+          Icon(
+            Icons.chevron_right_rounded,
+            size: 22,
+            color: colors.textTertiary,
+          ),
+        ],
+      ),
+    );
+
+    if (onTap == null) return content;
+    return InkWell(onTap: onTap, child: content);
+  }
+}
+
+class _AppearanceSelector extends StatelessWidget {
+  const _AppearanceSelector({required this.selected, required this.onSelected});
+
   final ThemeMode selected;
   final ValueChanged<ThemeMode> onSelected;
 
   @override
   Widget build(BuildContext context) {
     final colors = AppColors.of(context);
-    final styles = AppTextStyles.of(context);
-    final isSelected = value == selected;
+    final options = [
+      (ThemeMode.system, Icons.brightness_auto_rounded, 'System'),
+      (ThemeMode.light, Icons.light_mode_rounded, 'Light'),
+      (ThemeMode.dark, Icons.dark_mode_rounded, 'Dark'),
+    ];
 
-    return InkWell(
-      onTap: () => onSelected(value),
-      borderRadius: BorderRadius.circular(16),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        child: Row(
-          children: [
-            Icon(
-              icon,
-              size: 20,
-              color: isSelected ? colors.textPrimary : colors.textSecondary,
-            ),
-            const SizedBox(width: 12),
-            Expanded(child: Text(label, style: styles.listRowTitle)),
-            Icon(
-              isSelected
-                  ? Icons.radio_button_checked_rounded
-                  : Icons.radio_button_off_rounded,
-              size: 20,
-              color: isSelected ? colors.textPrimary : colors.textSecondary,
-            ),
-          ],
-        ),
+    return Container(
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: colors.surfaceRaised,
+        borderRadius: BorderRadius.circular(AppSpacing.radiusCard),
       ),
-    );
-  }
-}
-
-// ── Large tile (category limits) ─────────────────────────────────────────────
-
-class _ExportTile extends StatelessWidget {
-  const _ExportTile({
-    required this.icon,
-    required this.title,
-    required this.subtitle,
-    required this.onTap,
-  });
-
-  final IconData icon;
-  final String title;
-  final String subtitle;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = AppColors.of(context);
-    final styles = AppTextStyles.of(context);
-
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
-      child: Ink(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: colors.surfaceRaised,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: colors.borderHairline, width: 0.5),
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: colors.textPrimary.withValues(alpha: 0.08),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Icon(icon, size: 20, color: colors.textPrimary),
-            ),
-            const SizedBox(width: 14),
+      child: Row(
+        children: [
+          for (final option in options)
             Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(title, style: styles.listRowTitle),
-                  const SizedBox(height: 2),
-                  Text(subtitle, style: styles.body),
-                ],
+              child: _AppearanceOption(
+                icon: option.$2,
+                label: option.$3,
+                selected: selected == option.$1,
+                onTap: () => onSelected(option.$1),
               ),
             ),
-            Icon(Icons.chevron_right_rounded, color: colors.textSecondary),
-          ],
-        ),
+        ],
       ),
     );
   }
 }
 
-// ── Compact half-width action tile (export/import CSV | JSON row) ─────────────
-
-class _CompactActionTile extends StatelessWidget {
-  const _CompactActionTile({
+class _AppearanceOption extends StatelessWidget {
+  const _AppearanceOption({
     required this.icon,
     required this.label,
-    required this.description,
+    required this.selected,
     required this.onTap,
   });
 
   final IconData icon;
   final String label;
-  final String description;
+  final bool selected;
   final VoidCallback onTap;
 
   @override
@@ -440,22 +394,31 @@ class _CompactActionTile extends StatelessWidget {
 
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(14),
-      child: Ink(
-        padding: const EdgeInsets.symmetric(vertical: 14),
+      borderRadius: BorderRadius.circular(AppSpacing.radiusChip),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        padding: const EdgeInsets.symmetric(vertical: 10),
         decoration: BoxDecoration(
-          color: colors.surfaceRaised,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: colors.borderHairline, width: 0.5),
+          color: selected
+              ? colors.textPrimary.withValues(alpha: 0.09)
+              : Colors.transparent,
+          borderRadius: BorderRadius.circular(AppSpacing.radiusChip),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 22, color: colors.textPrimary),
-            const SizedBox(height: 6),
-            Text(label, style: styles.listRowTitle.copyWith(fontSize: 14)),
-            const SizedBox(height: 2),
-            Text(description, style: styles.caption),
+            Icon(
+              icon,
+              size: 20,
+              color: selected ? colors.textPrimary : colors.textTertiary,
+            ),
+            const SizedBox(height: 5),
+            Text(
+              label,
+              style: styles.caption.copyWith(
+                color: selected ? colors.textPrimary : colors.textSecondary,
+              ),
+            ),
           ],
         ),
       ),
@@ -463,7 +426,64 @@ class _CompactActionTile extends StatelessWidget {
   }
 }
 
-// ── Inline "Download sample" button ─────────────────────────────────────────
+class _SampleFormatCard extends StatelessWidget {
+  const _SampleFormatCard({required this.onCsvTap, required this.onJsonTap});
+
+  final VoidCallback onCsvTap;
+  final VoidCallback onJsonTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
+    final styles = AppTextStyles.of(context);
+
+    return Container(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 14),
+      decoration: BoxDecoration(
+        color: colors.surfaceRaised,
+        borderRadius: BorderRadius.circular(AppSpacing.radiusCard),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.file_download_outlined,
+                size: 20,
+                color: colors.textSecondary,
+              ),
+              const SizedBox(width: 12),
+              Text('Download a sample file', style: styles.listRowTitle),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Padding(
+            padding: const EdgeInsets.only(left: 32),
+            child: Text(
+              'Use it as a template when importing your data.',
+              style: styles.body,
+            ),
+          ),
+          const SizedBox(height: 14),
+          Row(
+            children: [
+              Expanded(
+                child: _SampleButton(label: 'CSV', onTap: onCsvTap),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: _SampleButton(label: 'JSON', onTap: onJsonTap),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Sample download button ───────────────────────────────────────────────────
 
 class _SampleButton extends StatelessWidget {
   const _SampleButton({required this.label, required this.onTap});
@@ -476,22 +496,33 @@ class _SampleButton extends StatelessWidget {
     final colors = AppColors.of(context);
     final styles = AppTextStyles.of(context);
 
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-        decoration: BoxDecoration(
-          color: colors.textPrimary.withValues(alpha: 0.07),
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: colors.borderHairline, width: 0.5),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.download_rounded, size: 14, color: colors.textSecondary),
-            const SizedBox(width: 4),
-            Text(label, style: styles.caption),
-          ],
+    return Material(
+      color: colors.textPrimary.withValues(alpha: 0.06),
+      borderRadius: BorderRadius.circular(AppSpacing.radiusChip),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(AppSpacing.radiusChip),
+        child: Ink(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(AppSpacing.radiusChip),
+            border: Border.all(color: colors.borderHairline),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 10),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.download_outlined,
+                  size: 16,
+                  color: colors.textSecondary,
+                ),
+                const SizedBox(width: 6),
+                Text(label, style: styles.chipLabel),
+              ],
+            ),
+          ),
         ),
       ),
     );

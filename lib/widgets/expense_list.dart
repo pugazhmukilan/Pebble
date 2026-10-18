@@ -10,8 +10,9 @@ import '../utils/amount_formatter.dart';
 import 'category_icon.dart';
 
 /// Expense list grouped by day, most recent first.
-/// Tap a row → details with edit. Swipe → delete, both gated by
-/// isCurrentMonth (§8).
+/// Expense entries stay editable even in archived months; category limits remain
+/// current-month-only. This keeps month history correct without locking the
+/// underlying transaction data behind an unnecessary read-only rule.
 ///
 /// Rows sit directly on the surface base separated by 1px hairline dividers
 /// (§4) — no per-row card wrapper. Icon chips are neutral (§4).
@@ -105,19 +106,16 @@ class ExpenseList extends StatelessWidget {
                 AppSpacing.md,
                 AppSpacing.xs,
               ),
-              child: Text(
-                label.toUpperCase(),
-                style: styles.sectionLabel,
-              ),
+              child: Text(label.toUpperCase(), style: styles.sectionLabel),
             ),
             ...dayExpenses.map(
               (expense) => _ExpenseRow(
                 expense: expense,
                 category: _categoryFor(expense),
-                isEditable: isCurrentMonth,
+                isEditable: true,
                 obscured: obscured,
                 onTap: () => _showDetails(context, expense),
-                onDelete: isCurrentMonth ? () => onDelete(expense) : null,
+                onDelete: () => onDelete(expense),
               ),
             ),
           ],
@@ -153,18 +151,16 @@ class ExpenseList extends StatelessWidget {
             children: [
               Align(
                 alignment: Alignment.centerRight,
-                child: isCurrentMonth
-                    ? IconButton(
-                        onPressed: () {
-                          Navigator.of(sheetCtx).pop();
-                          onEdit(expense);
-                        },
-                        icon: const Icon(Icons.edit_rounded),
-                        iconSize: 20,
-                        color: colors.textSecondary,
-                        visualDensity: VisualDensity.compact,
-                      )
-                    : const SizedBox(height: 40),
+                child: IconButton(
+                  onPressed: () {
+                    Navigator.of(sheetCtx).pop();
+                    onEdit(expense);
+                  },
+                  icon: const Icon(Icons.edit_rounded),
+                  iconSize: 20,
+                  color: colors.textSecondary,
+                  visualDensity: VisualDensity.compact,
+                ),
               ),
               Center(
                 child: Container(
@@ -172,9 +168,11 @@ class ExpenseList extends StatelessWidget {
                   height: 48,
                   decoration: BoxDecoration(
                     color: colors.surfaceBase,
-                    borderRadius:
-                        BorderRadius.circular(AppSpacing.radiusChip),
-                    border: Border.all(color: colors.borderHairline, width: 0.5),
+                    borderRadius: BorderRadius.circular(AppSpacing.radiusChip),
+                    border: Border.all(
+                      color: colors.borderHairline,
+                      width: 0.5,
+                    ),
                   ),
                   child: CategoryIcon(
                     category: category,
@@ -184,9 +182,7 @@ class ExpenseList extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: AppSpacing.sm),
-              Center(
-                child: Text(category.label, style: styles.screenTitle),
-              ),
+              Center(child: Text(category.label, style: styles.screenTitle)),
               const SizedBox(height: AppSpacing.xs),
               FittedBox(
                 fit: BoxFit.scaleDown,
@@ -298,9 +294,7 @@ class _ExpenseRow extends StatelessWidget {
           ),
           const SizedBox(width: AppSpacing.sm),
           Text(
-            obscured
-                ? kObscuredAmount
-                : '₹${formatFullAmount(expense.amount)}',
+            obscured ? kObscuredAmount : '₹${formatFullAmount(expense.amount)}',
             style: styles.listRowSecondary,
           ),
         ],
@@ -351,8 +345,7 @@ class _ExpenseRow extends StatelessWidget {
                   height: 48,
                   decoration: BoxDecoration(
                     color: colors.signalExpense.withValues(alpha: 0.12),
-                    borderRadius:
-                        BorderRadius.circular(AppSpacing.radiusChip),
+                    borderRadius: BorderRadius.circular(AppSpacing.radiusChip),
                   ),
                   child: Icon(
                     Icons.delete_outline_rounded,
@@ -362,9 +355,7 @@ class _ExpenseRow extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: AppSpacing.sm),
-              Center(
-                child: Text('Delete expense?', style: styles.screenTitle),
-              ),
+              Center(child: Text('Delete expense?', style: styles.screenTitle)),
               const SizedBox(height: AppSpacing.xs),
               Center(
                 child: FittedBox(
@@ -392,7 +383,9 @@ class _ExpenseRow extends StatelessWidget {
                     foregroundColor: colors.surfaceRaised,
                     elevation: 0,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(AppSpacing.radiusChip),
+                      borderRadius: BorderRadius.circular(
+                        AppSpacing.radiusChip,
+                      ),
                     ),
                   ),
                   child: Text('Delete', style: styles.button),
@@ -407,7 +400,9 @@ class _ExpenseRow extends StatelessWidget {
                     foregroundColor: colors.textPrimary,
                     side: BorderSide(color: colors.borderHairline),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(AppSpacing.radiusChip),
+                      borderRadius: BorderRadius.circular(
+                        AppSpacing.radiusChip,
+                      ),
                     ),
                   ),
                   child: Text('Cancel', style: styles.listRowTitle),

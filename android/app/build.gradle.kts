@@ -7,6 +7,30 @@ if (keystorePropertiesFile.exists()) {
     keystoreProperties.load(FileInputStream(keystorePropertiesFile))
 }
 
+// The versionCode/versionName are parsed straight from pubspec.yaml instead of relying on
+// `flutter.versionCode` / `flutter.versionName`. Those fall back to 1 / "1.0" whenever the
+// pubspec version has no "+buildNumber" suffix, which produces an AAB with versionCode 1 that
+// Play Store rejects with "Version code 1 has already been used".
+val pubspecVersion = rootProject.file("../pubspec.yaml")
+    .readLines()
+    .firstOrNull { it.trimStart().startsWith("version:") }
+    ?.substringAfter("version:")
+    ?.trim()
+    .orEmpty()
+
+val appVersionName = pubspecVersion.substringBefore("+")
+val appVersionCode = pubspecVersion.substringAfter("+", "")
+    .takeIf { it.isNotEmpty() }
+    ?.toIntOrNull()
+
+require(appVersionCode != null) {
+    "pubspec.yaml has `version: $pubspecVersion`, which has no build number. " +
+        "Flutter then silently builds with versionCode 1. " +
+        "Use `version: ${appVersionName.ifEmpty { "1.0.0" }}+<buildNumber>` " +
+        "(e.g. `version: ${appVersionName.ifEmpty { "1.0.0" }}+100`) and make the build number " +
+        "higher than every versionCode already published on Play Console."
+}
+
 plugins {
     id("com.android.application")
     id("kotlin-android")
@@ -44,8 +68,8 @@ android {
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
-        versionCode = flutter.versionCode
-        versionName = flutter.versionName
+        versionCode = appVersionCode
+        versionName = appVersionName
     }
 
     buildTypes {
